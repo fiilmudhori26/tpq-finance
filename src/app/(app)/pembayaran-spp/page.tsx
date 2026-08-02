@@ -1,5 +1,5 @@
-import HalamanKosong from "@/components/layout/halaman-kosong";
+import SppListView from "@/components/features/spp-list-view";
 
 export default function Page() {
-  return <HalamanKosong judul="Pembayaran spp" />;
+  return <SppListView />;
 }

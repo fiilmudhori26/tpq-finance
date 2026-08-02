@@ -15,6 +15,12 @@ import {
   LogOut,
 } from "lucide-react";
 
+const ROLE_LABEL: Record<string, string> = {
+  SUPER_ADMIN: "Super Admin",
+  BENDAHARA: "Bendahara",
+  VIEWER: "Viewer",
+};
+
 const NAV = [
   { href: "/beranda", label: "Beranda", icon: LayoutDashboard },
   { href: "/santri", label: "Santri", icon: Users },
@@ -34,7 +40,10 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = authClient.useSession();
-  const user = session?.user;
+  // additionalFields (tenantId/role/status) ada di sesi, tak diverifikasi tipe client
+  const user = session?.user as
+    | { name?: string; role?: string; tenantId?: string; status?: string }
+    | undefined;
   const inisial = user?.name
     ? user.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()
     : "BA";
@@ -92,7 +101,7 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
               {user?.name ?? "Bendahara"}
             </p>
             <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
-              Bendahara
+              {user?.role ? ROLE_LABEL[user.role] ?? user.role : "Bendahara"}
             </p>
           </div>
           <button

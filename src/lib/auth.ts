@@ -10,5 +10,76 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 hari
+    updateAge: 60 * 60 * 24, // refresh harian
+  },
+  user: {
+    additionalFields: {
+      tenantId: {
+        type: "string",
+        required: true,
+        input: false,
+      },
+      role: {
+        type: "string",
+        required: true,
+        input: false,
+      },
+      status: {
+        type: "string",
+        required: true,
+        input: false,
+      },
+    },
+  },
+  databaseHooks: {
+    session: {
+      create: {
+        after: async (session) => {
+          // LOGIN sukses — update lastLoginAt + audit (fire-and-forget)
+          const user = await db.user.findUnique({
+            where: { id: session.userId },
+            select: { tenantId: true },
+          });
+          if (!user) return;
+          await db.user.update({
+            where: { id: session.userId },
+            data: { lastLoginAt: new Date() },
+          });
+          await db.auditLog.create({
+            data: {
+              tenantId: user.tenantId,
+              userId: session.userId,
+              aksi: "LOGIN",
+              entitas: "User",
+              entitasId: session.userId,
+              detail: {},
+            },
+          });
+        },
+      },
+      delete: {
+        after: async (session) => {
+          // LOGOUT
+          const user = await db.user.findUnique({
+            where: { id: session.userId },
+            select: { tenantId: true },
+          });
+          if (!user) return;
+          await db.auditLog.create({
+            data: {
+              tenantId: user.tenantId,
+              userId: session.userId,
+              aksi: "LOGOUT",
+              entitas: "User",
+              entitasId: session.userId,
+              detail: {},
+            },
+          });
+        },
+      },
+    },
+  },
   plugins: [nextCookies()],
 });

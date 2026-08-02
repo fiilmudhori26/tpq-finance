@@ -1,5 +1,5 @@
-import HalamanKosong from "@/components/layout/halaman-kosong";
+import LaporanView from "@/components/features/laporan-view";
 
 export default function Page() {
-  return <HalamanKosong judul="Laporan" />;
+  return <LaporanView />;
 }
