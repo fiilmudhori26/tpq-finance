@@ -44,6 +44,56 @@ export interface Kpi {
   hoverBorder?: string;
 }
 
+export const JENJANG = ["TKA", "TPA", "TQA"] as const;
+export const KELAS = ["Alif", "Ba", "Ta"] as const;
+export const KELAS_LABEL = (jenjang: string, kelas: string) =>
+  `${jenjang} - ${kelas}`;
+
+export interface SantriRow {
+  id: string;
+  noInduk: string;
+  nama: string;
+  jenjang: string;
+  kelas: string;
+  wali: string;
+  noHp: string;
+  statusSpp: StatusSpp;
+  tanggalMasuk: string; // ISO
+}
+
+export interface PembayaranSpp {
+  noReferensi: string;
+  tanggal: string; // ISO
+  bulan: string; // "2024-01" dst
+  nominal: number;
+}
+
+export interface SantriPembayaran {
+  id: string;
+  nama: string;
+  kelas: string;
+  noInduk: string;
+  status: "Aktif" | "Nonaktif";
+  sppBulanan: number;
+  lunasBulan: number; // jumlah bulan lunas dalam tahun ajaran
+  tunggakanBulan: number;
+  bayar: Record<string, PembayaranSpp>; // key bulan "2024-01"
+}
+
+export interface BulanSpp {
+  kode: string; // "2024-01"
+  label: string; // "Jan"
+  tahun: number;
+  status: "lunas" | "tunggakan" | "belum";
+}
+
+export interface RiwayatSpp {
+  noReferensi: string;
+  tanggal: string; // ISO
+  bulanLabel: string; // "Jan 2024"
+  nominal: number;
+}
+
 export function formatRupiah(n: number): string {
   return new Intl.NumberFormat("id-ID", {
     style: "currency",

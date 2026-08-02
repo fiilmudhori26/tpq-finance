@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  SUPER_ADMIN
+  BENDAHARA
+  VIEWER
+}
+
+enum StatusUser {
+  AKTIF
+  NONAKTIF
+}
+
+enum StatusTenant {
+  AKTIF
+  NONAKTIF
+}
+
+enum Jenjang {
+  TKA
+  TPA
+  TQA
+}
+
+enum StatusSantri {
+  AKTIF
+  TIDAK_AKTIF
+}
+
+enum JenisKategori {
+  PEMASUKAN
+  PENGELUARAN
+}
+
+enum JenisTransaksi {
+  PEMASUKAN
+  PENGELUARAN
+}
+
+enum StatusTransaksi {
+  LUNAS
+  PROSES
+  DIBATALKAN
+}
+
+enum StatusPembayaran {
+  LUNAS
+  DIBATALKAN
+}
+
+enum MetodePembayaran {
+  TUNAI
+  TRANSFER
+}
+
+enum AksiAudit {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+}
+
+model Tenant {
+  id        String       @id @default(uuid())
+  nama      String       @db.VarChar(100)
+  slug      String       @unique @db.VarChar(50)
+  alamat    String?      @db.VarChar(255)
+  status    StatusTenant @default(AKTIF)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  users     User[]
+  santris   Santri[]
+  kategoris Kategori[]
+  transaksis Transaksi[]
+  pembayarans Pembayaran[]
+  sppRates  SppRate[]
+  pengaturans Pengaturan[]
+  auditLogs AuditLog[]
+}
+
+model User {
+  id           String     @id @default(uuid())
+  tenantId     String
+  tenant       Tenant     @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  name         String     @db.VarChar(100)
+  email        String     @unique @db.VarChar(150)
+  emailVerified Boolean   @default(false)
+  image        String?    @db.VarChar(255)
+  role         Role       @default(BENDAHARA)
+  status       StatusUser @default(AKTIF)
+  lastLoginAt  DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  accounts     Account[]
+  sessions     Session[]
+  transaksiDibuat Transaksi[] @relation("TransaksiCreator")
+  pembayaranDibuat Pembayaran[] @relation("PembayaranCreator")
+  auditLogs    AuditLog[]
+}
+
+// ---- Better Auth tables (adaptor prisma) ----
+
+model Account {
+  id                    String    @id @default(uuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  providerId            String    @db.VarChar(50)
+  accountId             String    @db.VarChar(50)
+  password              String?   @db.VarChar(255)
+  accessToken           String?   @db.Text
+  refreshToken          String?   @db.Text
+  idToken               String?   @db.Text
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?   @db.Text
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@index([providerId, accountId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Verification {
+  id         String   @id @default(uuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier, expiresAt])
+}
+
+model Santri {
+  id         String       @id @default(uuid())
+  tenantId   String
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  noInduk    String       @db.VarChar(20)
+  nama       String       @db.VarChar(100)
+  jenjang    Jenjang
+  kelas      String       @db.VarChar(50)
+  namaWali   String?      @db.VarChar(100)
+  noHpWali   String?      @db.VarChar(20)
+  status     StatusSantri @default(AKTIF)
+  keterangan String?      @db.VarChar(255)
+  deletedAt  DateTime?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  pembayarans Pembayaran[]
+
+  @@unique([tenantId, noInduk])
+  @@index([tenantId, status])
+  @@index([tenantId, jenjang])
+  @@index([tenantId, kelas])
+}
+
+model Kategori {
+  id        String        @id @default(uuid())
+  tenantId  String
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  jenis     JenisKategori
+  nama      String        @db.VarChar(50)
+  isDefault Boolean       @default(false)
+  deletedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  transaksis Transaksi[]
+
+  @@unique([tenantId, jenis, nama])
+}
+
+model Transaksi {
+  id         String          @id @default(uuid())
+  tenantId   String
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  jenis      JenisTransaksi
+  kategoriId String
+  kategori   Kategori        @relation(fields: [kategoriId], references: [id], onDelete: Restrict)
+  sumber     String?         @db.VarChar(150)
+  keterangan String?         @db.VarChar(500)
+  jumlah     Decimal         @db.Decimal(14, 0)
+  tanggal    DateTime
+  status     StatusTransaksi @default(LUNAS)
+  buktiUrl   String?         @db.VarChar(255)
+  createdById String
+  createdBy  User            @relation("TransaksiCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  deletedAt  DateTime?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+  pembayaran Pembayaran?
+
+  @@index([tenantId, tanggal])
+  @@index([tenantId, jenis, tanggal])
+  @@index([tenantId, kategoriId])
+  @@index([tenantId, createdAt])
+}
+
+model Pembayaran {
+  id          String           @id @default(uuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  santriId    String
+  santri      Santri           @relation(fields: [santriId], references: [id], onDelete: Restrict)
+  transaksiId String           @unique
+  transaksi   Transaksi        @relation(fields: [transaksiId], references: [id], onDelete: Restrict)
+  noReferensi String           @unique @db.VarChar(20)
+  bulan       DateTime
+  nominal     Decimal          @db.Decimal(14, 0)
+  status      StatusPembayaran @default(LUNAS)
+  metode      MetodePembayaran @default(TUNAI)
+  paidAt      DateTime
+  createdById String
+  createdBy   User             @relation("PembayaranCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  catatan     String?          @db.VarChar(255)
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([tenantId, santriId, bulan])
+  @@index([tenantId, santriId, createdAt])
+}
+
+model SppRate {
+  id          String  @id @default(uuid())
+  tenantId    String
+  tenant      Tenant  @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  jenjang     Jenjang
+  nominal     Decimal @db.Decimal(14, 0)
+  tahunAjaran String  @db.VarChar(9)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([tenantId, jenjang, tahunAjaran])
+}
+
+model Pengaturan {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  key       String   @db.VarChar(50)
+  value     Json
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, key])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  aksi      AksiAudit
+  entitas   String   @db.VarChar(30)
+  entitasId String   @db.VarChar(36)
+  detail    Json
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, entitas, entitasId])
+  @@index([tenantId, createdAt])
+}

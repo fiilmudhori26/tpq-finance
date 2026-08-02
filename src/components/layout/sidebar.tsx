@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { authClient } from "@/lib/auth-client";
 import {
   LayoutDashboard,
   Users,
@@ -31,6 +32,18 @@ interface SidebarProps {
 
 export default function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+  const inisial = user?.name
+    ? user.name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase()
+    : "BA";
+
+  async function handleLogout() {
+    await authClient.signOut();
+    router.push("/login");
+    router.refresh();
+  }
 
   const content = (
     <>
@@ -72,17 +85,20 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
       <div className="mt-auto border-t border-outline-variant pt-4">
         <div className="flex items-center gap-3 rounded-xl bg-surface-container-low p-4">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-container text-sm font-bold text-secondary">
-            BA
+            {inisial}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-on-surface">Bendahara</p>
+            <p className="truncate text-sm font-bold text-on-surface">
+              {user?.name ?? "Bendahara"}
+            </p>
             <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
-              Admin
+              Bendahara
             </p>
           </div>
           <button
             type="button"
             aria-label="Keluar"
+            onClick={handleLogout}
             className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
           >
             <LogOut className="h-4 w-4" />
