@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export type Role = "SUPER_ADMIN" | "BENDAHARA" | "VIEWER";
 
@@ -16,9 +17,16 @@ export type SessionUser = {
 export async function getSession(): Promise<{ user: SessionUser } | null> {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user) return null;
-  const u = session.user as unknown as SessionUser;
-  if (!u.tenantId) return null;
-  return { user: u };
+
+  // Better-auth session tidak bawa additionalFields (role/tenantId/status).
+  // Fetch manual dari DB via userId.
+  const u = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, email: true, role: true, status: true, tenantId: true },
+  });
+  if (!u || !u.tenantId) return null;
+
+  return { user: { ...session.user, role: u.role as Role, status: u.status, tenantId: u.tenantId } };
 }
 
 /**
