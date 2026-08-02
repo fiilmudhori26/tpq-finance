@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TPQ Finance - Pengeluaran</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary": "#ffffff",
+                        "background": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "inverse-on-surface": "#eaf1ff",
+                        "primary-container": "#00855d",
+                        "inverse-surface": "#27313f",
+                        "on-surface-variant": "#3d4a42",
+                        "tertiary-fixed": "#d9e6dd",
+                        "surface-container-high": "#dee9fc",
+                        "on-primary-container": "#f5fff7",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container-low": "#eff4ff",
+                        "on-tertiary-fixed-variant": "#3e4943",
+                        "on-secondary-container": "#5c647a",
+                        "on-surface": "#121c2a",
+                        "outline-variant": "#bccac0",
+                        "on-background": "#121c2a",
+                        "secondary-container": "#dae2fd",
+                        "outline": "#6d7a72",
+                        "primary-fixed-dim": "#68dba9",
+                        "surface-variant": "#d9e3f6",
+                        "secondary-fixed": "#dae2fd",
+                        "tertiary-fixed-dim": "#bdcac1",
+                        "tertiary-container": "#6b7770",
+                        "error-container": "#ffdad6",
+                        "surface": "#f8f9ff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-dim": "#d0dbed",
+                        "on-primary": "#ffffff",
+                        "error": "#ba1a1a",
+                        "inverse-primary": "#68dba9",
+                        "surface-container-highest": "#d9e3f6",
+                        "on-tertiary-fixed": "#131e19",
+                        "secondary": "#565e74",
+                        "tertiary": "#535f58",
+                        "primary": "#006948",
+                        "surface-tint": "#006c4a",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "on-primary-fixed": "#002114",
+                        "on-primary-fixed-variant": "#005137",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed": "#131b2e",
+                        "on-tertiary-container": "#f5fff7",
+                        "on-error-container": "#93000a",
+                        "primary-fixed": "#85f8c4"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-page": "2rem",
+                        "container-max": "1280px",
+                        "gutter": "1.5rem",
+                        "stack-lg": "2rem",
+                        "stack-md": "1rem",
+                        "stack-sm": "0.5rem"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "body-lg": ["Geist"],
+                        "body-md": ["Geist"],
+                        "label-sm": ["Geist"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                        "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "label-sm": ["14px", {"lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "500"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .soft-bloom {
+            box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.03);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen">
+<!-- Sidebar Navigation -->
+<aside class="fixed left-0 top-0 h-full w-64 bg-surface dark:bg-inverse-surface border-r border-outline-variant flex flex-col p-4 z-50">
+<div class="mb-8 px-4">
+<h1 class="font-display-lg text-headline-md text-primary dark:text-inverse-primary tracking-tight">TPQ Finance</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant opacity-70">Sistem Akuntansi Amanah</p>
+</div>
+<nav class="flex-1 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md">Beranda</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-body-md">Santri</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="font-body-md">Pembayaran SPP</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet">account_balance_wallet</span>
+<span class="font-body-md">Pemasukan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-secondary-container dark:bg-secondary text-on-secondary-container dark:text-on-secondary rounded-lg font-bold scale-[0.98] transition-transform duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-body-md">Pengeluaran</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+<span class="font-body-md">Laporan</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-on-surface-variant dark:text-on-secondary-fixed-variant hover:bg-surface-container-high transition-colors rounded-lg" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md">Pengaturan</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant flex items-center gap-3 px-2">
+<div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="A portrait of a professional middle-aged woman wearing a modest hijab, looking friendly and capable, high-end corporate photography style with soft studio lighting and a clean neutral background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-mxtSiwEYqSK4E5jfSER6CH8WXyrqtbOEqajP1z-9d6kExt-DA1C-sy7Fy7kH3xQGyewYUtV9xR58FCOtmMoGHmxUbEwa63vdZYWo1kdumLXlSsG3n5PrksNCWmH6DFya_owRus8fvRxLsHErAQ54UrC5StSmVGKaEBUTcH3cQGpzPBKXBYGrbNK_4Ofrv3EtIAHLeYtRAuSs7JRItoB9SdJk8P_Sj9MzKN_uMZGj-bsQ8wXye5eP"/>
+</div>
+<div>
+<p class="font-label-sm text-on-surface font-bold">Bendahara TPQ</p>
+<p class="text-[10px] text-on-surface-variant uppercase tracking-widest">Administrator</p>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 min-h-screen">
+<!-- Top App Bar -->
+<header class="sticky top-0 z-40 bg-surface-bright/70 backdrop-blur-xl border-b border-outline-variant flex justify-between items-center h-16 px-gutter">
+<div class="flex items-center gap-4 bg-surface-container-low px-4 py-1.5 rounded-full border border-outline-variant w-96">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-on-surface-variant/50" placeholder="Cari transaksi..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="absolute top-2.5 right-2.5 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<div class="p-8 max-w-container-max mx-auto space-y-stack-lg">
+<!-- Header Section -->
+<div class="flex justify-between items-end">
+<div>
+<h2 class="font-display-lg text-headline-md text-on-surface mb-1">Manajemen Pengeluaran</h2>
+<p class="font-body-md text-on-surface-variant">Pantau dan kelola semua biaya operasional TPQ secara transparan.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all soft-bloom" onclick="document.getElementById('modal-expense').classList.remove('hidden')">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                    Tambah Pengeluaran
+                </button>
+</div>
+<!-- Bento Stats Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-gutter">
+<div class="bg-white p-8 rounded-[24px] soft-bloom border border-outline-variant/30 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+<p class="font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Total Bulan Ini</p>
+<h3 class="font-display-lg text-headline-md text-on-surface">Rp 4.250.000</h3>
+<div class="mt-4 flex items-center gap-2 text-error font-bold">
+<span class="material-symbols-outlined" data-icon="trending_up">trending_up</span>
+<span class="text-sm">+12.5% vs bulan lalu</span>
+</div>
+</div>
+<div class="bg-white p-8 rounded-[24px] soft-bloom border border-outline-variant/30 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-secondary/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+<p class="font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Kategori Terbesar</p>
+<h3 class="font-display-lg text-headline-md text-on-surface">Gaji Guru</h3>
+<div class="mt-4 flex items-center gap-2 text-primary font-bold">
+<span class="material-symbols-outlined" data-icon="pie_chart">pie_chart</span>
+<span class="text-sm">65% dari total anggaran</span>
+</div>
+</div>
+<div class="bg-white p-8 rounded-[24px] soft-bloom border border-outline-variant/30 relative overflow-hidden group">
+<div class="absolute top-0 right-0 w-32 h-32 bg-error/5 rounded-full -mr-16 -mt-16 group-hover:scale-110 transition-transform duration-500"></div>
+<p class="font-label-sm text-on-surface-variant uppercase tracking-widest mb-2">Sisa Anggaran Ops</p>
+<h3 class="font-display-lg text-headline-md text-on-surface">Rp 1.750.000</h3>
+<div class="mt-4 flex items-center gap-2 text-on-surface-variant opacity-70">
+<span class="material-symbols-outlined" data-icon="schedule">schedule</span>
+<span class="text-sm">Berakhir dalam 12 hari</span>
+</div>
+</div>
+</div>
+<!-- Table Container -->
+<div class="bg-white rounded-[24px] soft-bloom border border-outline-variant/30 overflow-hidden">
+<div class="p-6 border-b border-outline-variant/30 flex justify-between items-center bg-surface-bright">
+<h4 class="font-headline-md text-lg">Riwayat Pengeluaran</h4>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-sm border border-outline-variant rounded-full flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="filter_list">filter_list</span>
+                            Filter
+                        </button>
+<button class="px-4 py-2 text-sm border border-outline-variant rounded-full flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="download">download</span>
+                            Ekspor
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left">
+<thead>
+<tr class="bg-surface-bright border-b border-outline-variant/30">
+<th class="px-8 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px]">Tanggal</th>
+<th class="px-6 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px]">Kategori</th>
+<th class="px-6 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px]">Keterangan</th>
+<th class="px-6 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px]">Bukti</th>
+<th class="px-8 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px] text-right">Jumlah</th>
+<th class="px-8 py-4 font-label-sm text-on-surface-variant uppercase tracking-widest text-[11px]"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-8 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">24 Okt 2023</span>
+<span class="text-xs text-on-surface-variant">14:30 WIB</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-fixed-variant rounded-full text-xs font-bold">Operasional</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-on-surface max-w-xs truncate">Pembelian ATK dan Perlengkapan Ujian Santri</p>
+</td>
+<td class="px-6 py-5">
+<div class="w-12 h-12 rounded-lg border border-outline-variant overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all">
+<img class="w-full h-full object-cover" data-alt="A macro close-up of a paper grocery receipt with columns of numbers and text, lying on a clean white desk next to a green pen. Minimalist, professional lighting, shallow depth of field, high-end photography style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAC4akFosDOAeDlY6sAsSL67JnZH1qfd42yteF6wPxB9ekZNb9xHuKcFVESHy7LNe7r5Z3I-WAuwb_zalJ8DIeQRO-QNo3cQ0DszS9DoYsEg2oXQBD-QUIZ0XEfWzQBKAifyBTcdYw7Zvisinjd85ixXyq4SnFnvZFfV4bDChfQoitwCO_Jzfeqg01SxtldNHmSbgJmRnIOqqWSW4ibbH0Ph02jTGIPqQHi0lRTO_g-WTRaZ6T5U_k"/>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<span class="font-bold text-on-surface">Rp 450.000</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-full hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-8 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">20 Okt 2023</span>
+<span class="text-xs text-on-surface-variant">09:00 WIB</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-tertiary-fixed text-on-tertiary-fixed-variant rounded-full text-xs font-bold">Gaji/Honor</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-on-surface max-w-xs truncate">Honor Mengajar Ustadz &amp; Ustadzah (Bulan Okt)</p>
+</td>
+<td class="px-6 py-5">
+<div class="w-12 h-12 rounded-lg border border-outline-variant overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all">
+<img class="w-full h-full object-cover" data-alt="A stack of neat, high-quality business documents with a small signature at the bottom, partially covered by a modern clear acrylic clipboard. The aesthetic is clean, professional, and corporate with soft natural daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8JO4GIp14wqlnhfrbkOmCojKOLhBL2YWcdccSZOdJgQTy5XHjlAxBo2a1OmIpcx0Zja6XrXLKFl9MUYO77jXl-y7AcN_2K99BkEPwUvAmOIUzepudTDydGnfbbsi7q1gezCG--gE8K3mU1MeVM-8bACAVrAxblG_8hwCA5L3qnalUPHzkfEwHnR_uKjWmrsDCrFnXlhTQcWqk1Gci9cTLA7uP9giWZnv871kXmTSM3evzeBf2FBX2"/>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<span class="font-bold text-on-surface">Rp 3.500.000</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-full hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-8 py-5">
+<div class="flex flex-col">
+<span class="font-bold text-on-surface">15 Okt 2023</span>
+<span class="text-xs text-on-surface-variant">11:15 WIB</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-surface-container text-on-secondary-container rounded-full text-xs font-bold">Perawatan</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-on-surface max-w-xs truncate">Perbaikan Keran Air dan Kelistrikan Kelas</p>
+</td>
+<td class="px-6 py-5">
+<div class="w-12 h-12 rounded-lg border border-outline-variant overflow-hidden cursor-pointer hover:ring-2 ring-primary transition-all">
+<img class="w-full h-full object-cover" data-alt="A clean, flat lay photograph of a printed receipt from a hardware store, neatly placed on a light oak wood surface with some soft shadows of leaves dancing on the edge. High-quality aesthetic photography." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxstM9_J0Sn3ADHccxOYi8dNKL0xYIAiGM6107RW7MLsMWTXOmQiCIVTnZEZQQpiS6DNEresLUJEVNK_5vsK-aK4UGzxiuGgZluns_XTEMRga90MgzQrstqnDXvwKUcIzrObt3i71AtR8WpYGi79Uclgd3nVPI02IAv3yiXMzp5AzPjpRo1I1SqaDm_4iJPw2rXEgjL8NMoB16vhQk04Ez8oITbcKnVl_4kRfxMONTznVNbsnj500e"/>
+</div>
+</td>
+<td class="px-8 py-5 text-right">
+<span class="font-bold text-on-surface">Rp 125.000</span>
+</td>
+<td class="px-8 py-5 text-right">
+<button class="p-2 rounded-full hover:bg-surface-container text-on-surface-variant">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-6 border-t border-outline-variant/30 flex justify-between items-center bg-surface-bright">
+<p class="text-sm text-on-surface-variant">Menampilkan 3 dari 42 transaksi</p>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-white disabled:opacity-30" disabled="">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-primary bg-primary text-on-primary font-bold text-xs">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-white text-xs">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-white text-xs">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded border border-outline-variant text-on-surface-variant hover:bg-white">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Modal: Tambah Pengeluaran -->
+<div class="fixed inset-0 z-[100] hidden" id="modal-expense">
+<div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onclick="this.parentElement.classList.add('hidden')"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] bg-white rounded-[32px] soft-bloom overflow-hidden flex flex-col max-h-[90vh]">
+<div class="p-8 border-b border-outline-variant/20 flex justify-between items-center">
+<div>
+<h3 class="font-headline-md text-on-surface">Catat Pengeluaran Baru</h3>
+<p class="text-sm text-on-surface-variant">Pastikan semua data sesuai dengan bukti fisik.</p>
+</div>
+<button class="w-10 h-10 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors" onclick="document.getElementById('modal-expense').classList.add('hidden')">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+<div class="p-8 space-y-6 overflow-y-auto no-scrollbar">
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant">Tanggal Transaksi</label>
+<div class="relative">
+<span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-on-surface-variant" data-icon="calendar_today">calendar_today</span>
+<input class="w-full pl-12 pr-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" type="date"/>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant">Kategori</label>
+<select class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none appearance-none bg-white">
+<option>Pilih Kategori</option>
+<option>Operasional</option>
+<option>Gaji/Honor</option>
+<option>Perawatan</option>
+<option>Lain-lain</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant">Jumlah (Rp)</label>
+<input class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" placeholder="0" type="number"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant">Keterangan</label>
+<textarea class="w-full px-4 py-3 border border-outline-variant rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all resize-none" placeholder="Contoh: Bayar listrik bulan Oktober..." rows="3"></textarea>
+</div>
+<div class="space-y-2">
+<label class="font-label-sm text-on-surface-variant">Unggah Bukti (Nota/Struk)</label>
+<div class="border-2 border-dashed border-outline-variant rounded-2xl p-8 flex flex-col items-center justify-center text-center hover:border-primary hover:bg-primary/5 cursor-pointer transition-all">
+<span class="material-symbols-outlined text-4xl text-primary mb-2" data-icon="cloud_upload">cloud_upload</span>
+<p class="font-body-md text-on-surface">Klik untuk unggah atau seret file ke sini</p>
+<p class="text-xs text-on-surface-variant mt-1">PNG, JPG up to 10MB</p>
+</div>
+</div>
+</div>
+<div class="p-8 bg-surface-container-low flex gap-4">
+<button class="flex-1 py-3 border border-outline-variant rounded-xl font-bold text-on-surface-variant hover:bg-white transition-colors" onclick="document.getElementById('modal-expense').classList.add('hidden')">
+                    Batal
+                </button>
+<button class="flex-[2] py-3 bg-primary text-on-primary rounded-xl font-bold soft-bloom hover:opacity-90 transition-opacity">
+                    Simpan Transaksi
+                </button>
+</div>
+</div>
+</div>
+<script>
+        // Simple micro-interaction for rows
+        document.querySelectorAll('tbody tr').forEach(row => {
+            row.addEventListener('mousedown', () => {
+                row.classList.add('scale-[0.99]');
+            });
+            row.addEventListener('mouseup', () => {
+                row.classList.remove('scale-[0.99]');
+            });
+        });
+    </script>
+</body></html>
