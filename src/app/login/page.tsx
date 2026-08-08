@@ -13,6 +13,13 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Sesi masih valid? (mis. cookie basi/valid) — langsung ke beranda, jangan tampilkan form.
+  const { data: session, isPending } = authClient.useSession();
+  if (!isPending && session?.user) {
+    router.push("/beranda");
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");

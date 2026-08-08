@@ -10,10 +10,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (pathname.startsWith("/login")) {
-    return NextResponse.redirect(new URL("/beranda", request.url));
-  }
-
+  // Cookie ada tapi tak diverifikasi di sini (edge runtime tak boleh akses DB).
+  // /login selalu dibiarkan render — halaman itu sendiri mengecek sesi (client-side)
+  // dan melempar ke /beranda bila masih valid. Ini mencegah redirect loop saat
+  // sesi DB hilang (cookie basi) tapi cookie masih ada.
   return NextResponse.next();
 }
 
