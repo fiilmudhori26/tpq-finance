@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { X } from "lucide-react";
-import { JENJANG, KELAS, type Santri } from "@/lib/mock-santri";
+import { toast } from "sonner";
+import { JENJANG, KELAS } from "@/lib/mock-santri";
+import { tambahSantri, editSantri } from "@/actions/santri";
+import type { SantriRow } from "@/lib/data";
 
 export default function ModalSantri({
   open,
@@ -11,13 +14,14 @@ export default function ModalSantri({
 }: {
   open: boolean;
   onClose: () => void;
-  edit: Santri | null;
+  edit: SantriRow | null;
 }) {
   const [nama, setNama] = useState("");
   const [jenjang, setJenjang] = useState<string>(JENJANG[0]);
   const [kelas, setKelas] = useState<string>(KELAS[0]);
   const [wali, setWali] = useState("");
   const [noHp, setNoHp] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     if (open) {
@@ -30,6 +34,31 @@ export default function ModalSantri({
   }, [open, edit]);
 
   if (!open) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    startTransition(async () => {
+      const payload = {
+        nama,
+        jenjang: jenjang as "TKA" | "TPA" | "TQA",
+        kelas,
+        namaWali: wali,
+        noHpWali: noHp,
+      };
+
+      const res = edit
+        ? await editSantri(edit.id, payload)
+        : await tambahSantri(payload);
+
+      if (res.success) {
+        toast.success(res.message);
+        onClose();
+      } else {
+        toast.error(res.message ?? "Terjadi kesalahan");
+      }
+    });
+  };
 
   return (
     <div
@@ -51,19 +80,14 @@ export default function ModalSantri({
             type="button"
             aria-label="Tutup"
             onClick={onClose}
-            className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high"
+            disabled={isPending}
+            className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onClose();
-          }}
-        >
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
           <div>
             <label htmlFor="nama" className="mb-1 block text-sm font-medium text-on-surface-variant">
               Nama Lengkap
@@ -74,7 +98,8 @@ export default function ModalSantri({
               value={nama}
               onChange={(e) => setNama(e.target.value)}
               placeholder="Nama santri"
-              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+              disabled={isPending}
+              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -86,7 +111,8 @@ export default function ModalSantri({
                 id="jenjang"
                 value={jenjang}
                 onChange={(e) => setJenjang(e.target.value)}
-                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+                disabled={isPending}
+                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
               >
                 {JENJANG.map((j) => (
                   <option key={j}>{j}</option>
@@ -101,7 +127,8 @@ export default function ModalSantri({
                 id="kelas"
                 value={kelas}
                 onChange={(e) => setKelas(e.target.value)}
-                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+                disabled={isPending}
+                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
               >
                 {KELAS.map((k) => (
                   <option key={k}>{k}</option>
@@ -119,7 +146,8 @@ export default function ModalSantri({
               value={wali}
               onChange={(e) => setWali(e.target.value)}
               placeholder="Nama wali / orang tua"
-              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+              disabled={isPending}
+              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
           <div>
@@ -131,7 +159,8 @@ export default function ModalSantri({
               value={noHp}
               onChange={(e) => setNoHp(e.target.value)}
               placeholder="08xx-xxxx-xxxx"
-              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+              disabled={isPending}
+              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
 
@@ -139,15 +168,17 @@ export default function ModalSantri({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-outline-variant bg-white py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container"
+              disabled={isPending}
+              className="flex-1 rounded-lg border border-outline-variant bg-white py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="flex-[2] rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95"
+              disabled={isPending}
+              className="flex-[2] rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
             >
-              {edit ? "Simpan Perubahan" : "Simpan Santri"}
+              {isPending ? "Menyimpan..." : edit ? "Simpan Perubahan" : "Simpan Santri"}
             </button>
           </div>
         </form>

@@ -2,53 +2,45 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import {
-  CheckCircle2,
-  AlertCircle,
-  Clock,
-  ChevronLeft,
-  Printer,
-} from "lucide-react";
-import { useParams } from "next/navigation";
-import { SANTRI_SPP, BULAN_2024, type SantriPembayaran } from "@/lib/mock-pembayaran";
+import { CheckCircle2, AlertCircle, Clock, ChevronLeft, Printer } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
+import type { SantriDetail } from "@/lib/data";
 import ModalBayar from "./modal-bayar";
 
-const BULAN_NUM = BULAN_2024.map((_, i) => `2024-${String(i + 1).padStart(2, "0")}`);
+const BULAN_2024 = [
+  "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+  "Jul", "Agu", "Sep", "Okt", "Nov", "Des",
+];
 
-function statusBulan(bulan: string, data: SantriPembayaran): "lunas" | "tunggakan" | "belum" {
-  if (data.bayar[bulan]) return "lunas";
-  const idx = BULAN_NUM.indexOf(bulan);
-  return idx <= 7 ? "tunggakan" : "belum";
+function bulanKey(d: Date) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
-export default function SppDetail() {
-  const { id } = useParams<{ id: string }>();
-  const data = SANTRI_SPP[id];
+export default function SppDetail({ data }: { data: SantriDetail }) {
   const [open, setOpen] = useState(false);
 
-  if (!data) {
-    return (
-      <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-12 text-center shadow-soft">
-        <p className="text-lg font-semibold text-on-surface">Santri tidak ditemukan.</p>
-        <p className="mt-1 text-sm text-on-surface-variant">Periksa kembali ID santri.</p>
-      </div>
-    );
+  const totalTunggakan = data.tunggakanBulan * data.sppBulanan;
+
+  // Bulan-bulan dalam tahun berjalan yang belum dibayar
+  const now = new Date();
+  const lunasSet = new Set(data.riwayat.map((r) => r.bulan));
+  const bulanBelum: string[] = [];
+  for (let m = 0; m < now.getMonth(); m++) {
+    const key = `${now.getFullYear()}-${String(m + 1).padStart(2, "0")}`;
+    if (!lunasSet.has(key)) bulanBelum.push(key);
   }
 
-  const totalTunggakan = data.tunggakanBulan * data.sppBulanan;
-  const bulanTunggakan = BULAN_NUM.slice(7, 7 + data.tunggakanBulan);
-  const riwayat = Object.values(data.bayar).sort((a, b) => b.bulan.localeCompare(a.bulan));
+  const riwayat = [...data.riwayat].sort((a, b) => b.bulan.localeCompare(a.bulan));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            href="/santri"
+            href="/pembayaran-spp"
             className="mb-1 inline-flex items-center gap-1 text-sm font-medium text-on-surface-variant hover:text-primary"
           >
-            <ChevronLeft className="h-4 w-4" aria-hidden /> Kembali ke Santri
+            <ChevronLeft className="h-4 w-4" aria-hidden /> Kembali ke Pembayaran SPP
           </Link>
           <h1 className="text-2xl font-semibold text-on-surface">Pembayaran SPP</h1>
           <p className="mt-1 text-sm text-on-surface-variant">
@@ -70,7 +62,7 @@ export default function SppDetail() {
           <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-soft">
             <div className="relative">
               <span className="absolute right-0 top-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-                {data.status}
+                Aktif
               </span>
               <div className="flex flex-col items-center gap-4">
                 <div className="relative">
@@ -110,11 +102,11 @@ export default function SppDetail() {
             <p className="mt-2 text-[32px] font-bold tabular-nums">
               {formatRupiah(totalTunggakan)}
             </p>
-            {bulanTunggakan.map((b) => {
-              const idx = BULAN_NUM.indexOf(b);
+            {bulanBelum.map((b) => {
+              const idx = Number(b.split("-")[1]) - 1;
               return (
                 <p key={b} className="mt-1 text-sm text-inverse-on-surface/80">
-                  SPP {BULAN_2024[idx]} 2024 {formatRupiah(data.sppBulanan)}
+                  SPP {BULAN_2024[idx]} {b.split("-")[0]} {formatRupiah(data.sppBulanan)}
                 </p>
               );
             })}
@@ -134,7 +126,7 @@ export default function SppDetail() {
           <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-soft">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-on-surface">
-                Checklist Pembayaran 2024
+                Checklist Pembayaran {now.getFullYear()}
               </h2>
               <div className="flex items-center gap-4 text-xs text-on-surface-variant">
                 <span className="flex items-center gap-1.5">
@@ -149,28 +141,25 @@ export default function SppDetail() {
               </div>
             </div>
             <div className="mt-6 grid grid-cols-3 gap-4 md:grid-cols-4 lg:grid-cols-6">
-              {BULAN_NUM.map((bulan, i) => {
-                const st = statusBulan(bulan, data);
+              {Array.from({ length: now.getMonth() + 1 }, (_, i) => {
+                const key = `${now.getFullYear()}-${String(i + 1).padStart(2, "0")}`;
+                const st = lunasSet.has(key) ? "lunas" : "tunggakan";
                 return (
                   <button
-                    key={bulan}
+                    key={key}
                     type="button"
                     onClick={() => st !== "lunas" && setOpen(true)}
-                    aria-label={`${BULAN_2024[i]} ${st === "lunas" ? "sudah dibayar" : st === "tunggakan" ? "menunggak" : "belum jatuh tempo"}`}
+                    aria-label={`${BULAN_2024[i]} ${st === "lunas" ? "sudah dibayar" : "menunggak"}`}
                     className={`flex flex-col items-center gap-2 rounded-2xl border p-4 text-sm font-bold transition-transform hover:scale-105 ${
                       st === "lunas"
                         ? "border-transparent bg-primary text-white ring-4 ring-primary/5"
-                        : st === "tunggakan"
-                          ? "animate-pulse border-error/20 bg-error-container text-error"
-                          : "border-transparent bg-surface-container-highest text-on-surface-variant/50 hover:bg-surface-container-high"
+                        : "animate-pulse border-error/20 bg-error-container text-error"
                     }`}
                   >
                     {st === "lunas" ? (
                       <CheckCircle2 className="h-5 w-5" aria-hidden />
-                    ) : st === "tunggakan" ? (
-                      <AlertCircle className="h-5 w-5" aria-hidden />
                     ) : (
-                      <Clock className="h-5 w-5" aria-hidden />
+                      <AlertCircle className="h-5 w-5" aria-hidden />
                     )}
                     {BULAN_2024[i]}
                   </button>
@@ -193,8 +182,15 @@ export default function SppDetail() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
+                  {riwayat.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-on-surface-variant">
+                        Belum ada riwayat pembayaran.
+                      </td>
+                    </tr>
+                  )}
                   {riwayat.map((b) => {
-                    const [, m] = b.bulan.split("-");
+                    const [y, m] = b.bulan.split("-");
                     return (
                       <tr key={b.noReferensi} className="transition-colors hover:bg-primary/5">
                         <td className="px-4 py-4 text-sm font-semibold text-on-surface tabular-nums">
@@ -204,7 +200,7 @@ export default function SppDetail() {
                           {new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "short", year: "numeric" }).format(new Date(b.tanggal))}
                         </td>
                         <td className="px-4 py-4 text-sm text-on-surface">
-                          {BULAN_2024[Number(m) - 1]} 2024
+                          {BULAN_2024[Number(m) - 1]} {y}
                         </td>
                         <td className="px-4 py-4 text-right text-sm font-bold text-primary tabular-nums">
                           {formatRupiah(b.nominal)}
@@ -213,6 +209,14 @@ export default function SppDetail() {
                           <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase text-primary">
                             Lunas
                           </span>
+                        </td>
+                        <td className="px-4 py-4 text-right">
+                          <Link
+                            href={`/pembayaran-spp/${data.id}/kwitansi?ref=${b.noReferensi}`}
+                            className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
+                          >
+                            <Printer className="h-3.5 w-3.5" aria-hidden /> Kwitansi
+                          </Link>
                         </td>
                       </tr>
                     );
@@ -227,8 +231,8 @@ export default function SppDetail() {
       <ModalBayar
         open={open}
         onClose={() => setOpen(false)}
-        data={data}
-        bulanBelum={BULAN_NUM.filter((b) => !data.bayar[b])}
+        santri={{ id: data.id, nama: data.nama, sppBulanan: data.sppBulanan }}
+        bulanBelum={bulanBelum}
       />
     </div>
   );

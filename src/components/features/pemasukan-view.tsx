@@ -1,24 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Wallet, HandCoins, CalendarCheck } from "lucide-react";
-import { PEMASUKAN } from "@/lib/mock-transaksi";
+import { type TransaksiRow } from "@/lib/data";
 import { formatRupiah, formatTanggal } from "@/lib/format";
 import SummaryCard from "@/components/ui/summary-card";
 import Card from "@/components/ui/card";
 import CategoryBadge from "@/components/ui/category-badge";
 import ActionBar from "./action-bar";
 import TableRowMenu from "./table-row-menu";
-import ModalPemasukan from "./modal-pemasukan";
+import ModalPemasukan, { type KategoriOption } from "./modal-pemasukan";
+import PaginationBar from "./pagination-bar";
 
-export default function PemasukanView() {
+interface Props {
+  initialData: TransaksiRow[];
+  total: number;
+  page: number;
+  perPage: number;
+  kategoris: KategoriOption[];
+}
+
+export default function PemasukanView({ initialData, total, page, perPage, kategoris }: Props) {
   const [open, setOpen] = useState(false);
-  const total = PEMASUKAN.reduce((a, t) => a + t.jumlah, 0);
-  const infaq = PEMASUKAN.filter((t) => ["Infaq", "Donasi"].includes(t.kategori)).reduce(
-    (a, t) => a + t.jumlah,
-    0
-  );
-  const donatur = PEMASUKAN.filter((t) => ["Infaq", "Donasi"].includes(t.kategori)).length;
+  const router = useRouter();
+
+  const totalNominal = initialData.reduce((a, t) => a + t.jumlah, 0);
+  const infaqTotal = initialData
+    .filter((t) => t.kategori.toLowerCase().includes("infaq") || t.kategori.toLowerCase().includes("donasi"))
+    .reduce((a, t) => a + t.jumlah, 0);
+  const donaturCount = initialData
+    .filter((t) => t.kategori.toLowerCase().includes("infaq") || t.kategori.toLowerCase().includes("donasi"))
+    .length;
+
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const current = Math.min(page, pages);
 
   return (
     <div className="space-y-6">
@@ -34,32 +50,30 @@ export default function PemasukanView() {
           icon={Wallet}
           iconBg="bg-primary/10"
           iconColor="text-primary"
-          label="Total Pemasukan Bulan Ini"
-          value={formatRupiah(total)}
-          chip="+12%"
-          chipTone="positive"
+          label="Total Pemasukan (Halaman Ini)"
+          value={formatRupiah(totalNominal)}
         />
         <SummaryCard
           icon={HandCoins}
           iconBg="bg-secondary/10"
           iconColor="text-secondary"
           label="Total Infaq & Sedekah"
-          value={formatRupiah(infaq)}
-          sub={`Dari ${donatur} donatur bulan ini`}
+          value={formatRupiah(infaqTotal)}
+          sub={`Dari ${donaturCount} donatur`}
         />
         <SummaryCard
           icon={CalendarCheck}
           iconBg="bg-tertiary-fixed/20"
           iconColor="text-tertiary"
-          label="Pembayaran SPP Lunas"
-          value="92%"
-          progress={92}
+          label="Total Transaksi"
+          value={total.toLocaleString("id-ID")}
+          sub="transaksi tercatat"
         />
       </div>
 
       <ActionBar
         title="Pemasukan"
-        periode="Agustus 2024"
+        periode={new Date().toLocaleString("id-ID", { month: "long", year: "numeric" })}
         onAdd={() => setOpen(true)}
         addLabel="Tambah Pemasukan"
       />
@@ -69,7 +83,7 @@ export default function PemasukanView() {
           <div>
             <h2 className="text-lg font-semibold text-on-surface">Riwayat Transaksi</h2>
             <p className="text-sm text-on-surface-variant">
-              Menampilkan {PEMASUKAN.length} transaksi terakhir
+              Menampilkan {initialData.length} dari {total} transaksi
             </p>
           </div>
         </div>
@@ -86,7 +100,7 @@ export default function PemasukanView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
-              {PEMASUKAN.map((t) => (
+              {initialData.map((t) => (
                 <tr key={t.id} className="transition-colors hover:bg-primary/5">
                   <td className="px-6 py-4">
                     <CategoryBadge kategori={t.kategori} />
@@ -108,15 +122,27 @@ export default function PemasukanView() {
                   </td>
                 </tr>
               ))}
+              {initialData.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-on-surface-variant">
+                    Belum ada data pemasukan.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/20 bg-surface-container-low px-6 py-4 text-sm text-on-surface-variant">
-          <p>Menampilkan 1-{PEMASUKAN.length} dari {PEMASUKAN.length} transaksi</p>
-        </div>
+        <PaginationBar total={total} page={current} perPage={perPage} basePath="/pemasukan" />
       </Card>
 
-      <ModalPemasukan open={open} onClose={() => setOpen(false)} />
+      <ModalPemasukan
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          router.refresh();
+        }}
+        kategoris={kategoris}
+      />
     </div>
   );
 }

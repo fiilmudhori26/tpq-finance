@@ -1,10 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { CalendarCheck, Users, Wallet } from "lucide-react";
-import { SANTRI } from "@/lib/mock-santri";
-import { SANTRI_SPP } from "@/lib/mock-pembayaran";
+import { type SantriRow } from "@/lib/data";
 import { formatRupiah } from "@/lib/format";
 import SummaryCard from "@/components/ui/summary-card";
 import Card from "@/components/ui/card";
@@ -14,38 +12,36 @@ import AvatarInitials from "@/components/ui/avatar";
 import PaginationBar from "@/components/features/pagination-bar";
 import TableRowActions from "@/components/features/table-row-actions";
 
-const PER_PAGE = 10;
+interface Props {
+  initialData: SantriRow[];
+  total: number;
+  page: number;
+  perPage: number;
+}
 
-export default function SppListView() {
-  const params = useSearchParams();
-  const page = Math.max(1, Number(params.get("page") ?? 1));
+export default function SppListView({ initialData, total, page, perPage }: Props) {
   const [q, setQ] = useState("");
 
-  const rows = useMemo(() => {
-    const r = SANTRI.filter((s) =>
-      q ? s.nama.toLowerCase().includes(q.toLowerCase()) || s.noInduk.includes(q) : true
-    );
-    return r;
-  }, [q]);
+  const filtered = q
+    ? initialData.filter(
+        (s) =>
+          s.nama.toLowerCase().includes(q.toLowerCase()) || s.noInduk.includes(q)
+      )
+    : initialData;
 
-  const total = rows.length;
-  const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const totalLunas = filtered.filter((s) => s.statusSpp === "Lunas").length;
+  const totalTunggakan = filtered.filter((s) => s.statusSpp === "Tunggakan").length;
+  const totalNominal = filtered.reduce((a, s) => a + (s.sppBulanan ?? 0), 0);
+
+  const pages = Math.max(1, Math.ceil(total / perPage));
   const current = Math.min(page, pages);
-  const visible = rows.slice((current - 1) * PER_PAGE, current * PER_PAGE);
-
-  const totalTunggakan = SANTRI.filter((s) => s.statusSpp === "Tunggakan").length;
-  const totalLunas = SANTRI.length - totalTunggakan;
-  const totalNominal = SANTRI.reduce(
-    (a, s) => a + (SANTRI_SPP[s.id]?.sppBulanan ?? 75_000),
-    0
-  );
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold text-on-surface">Pembayaran SPP</h1>
         <p className="mt-1 text-sm text-on-surface-variant">
-          Pantau iuran bulanan seluruh santri TPQ Al-Ikhlas.
+          Pantau iuran bulanan seluruh santri TPQ.
         </p>
       </div>
 
@@ -56,9 +52,7 @@ export default function SppListView() {
           iconColor="text-primary"
           label="Santri Lunas"
           value={String(totalLunas)}
-          sub={`dari ${SANTRI.length} santri aktif`}
-          chip="+2.4%"
-          chipTone="positive"
+          sub={`dari ${total} santri aktif`}
         />
         <SummaryCard
           icon={Users}
@@ -74,7 +68,7 @@ export default function SppListView() {
           iconColor="text-secondary"
           label="Total SPP Bulan Ini"
           value={formatRupiah(totalNominal)}
-          sub="tarif SPP 2024/2025"
+          sub="tarif SPP aktif"
         />
       </div>
 
@@ -104,50 +98,47 @@ export default function SppListView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
-              {visible.map((s, i) => {
-                const spp = SANTRI_SPP[s.id];
-                const lunas = spp?.lunasBulan ?? 0;
-                const tunggakan = spp?.tunggakanBulan ?? 0;
-                return (
-                  <tr key={s.id} className="group transition-colors hover:bg-primary/5">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <AvatarInitials nama={s.nama} variant={i} />
-                        <div>
-                          <p className="font-semibold text-on-surface">{s.nama}</p>
-                          <p className="text-xs text-on-surface-variant">ID: {s.noInduk}</p>
-                        </div>
+              {filtered.map((s, i) => (
+                <tr key={s.id} className="group transition-colors hover:bg-primary/5">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <AvatarInitials nama={s.nama} variant={i} />
+                      <div>
+                        <p className="font-semibold text-on-surface">{s.nama}</p>
+                        <p className="text-xs text-on-surface-variant">ID: {s.noInduk}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <ClassBadge kelas={`${s.jenjang} - ${s.kelas}`} />
-                    </td>
-                    <td className="px-6 py-4 text-sm tabular-nums text-on-surface">
-                      {formatRupiah(spp?.sppBulanan ?? 75_000)}
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={s.statusSpp} dot />
-                      <p className="mt-1 text-xs text-on-surface-variant">
-                        {lunas} lunas · {tunggakan} tunggakan
-                      </p>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <TableRowActions href={`/pembayaran-spp/${s.id}`} />
-                    </td>
-                  </tr>
-                );
-              })}
-              {visible.length === 0 && (
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <ClassBadge kelas={`${s.jenjang} - ${s.kelas}`} />
+                  </td>
+                  <td className="px-6 py-4 text-sm tabular-nums text-on-surface">
+                    {formatRupiah(s.sppBulanan)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <StatusBadge status={s.statusSpp} dot />
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <TableRowActions href={`/pembayaran-spp/${s.id}`} />
+                  </td>
+                </tr>
+              ))}
+              {filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
-                    Belum ada data.
+                    Belum ada data santri.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <PaginationBar total={total} page={current} perPage={PER_PAGE} basePath="/pembayaran-spp" />
+        <PaginationBar
+          total={total}
+          page={current}
+          perPage={perPage}
+          basePath="/pembayaran-spp"
+        />
       </Card>
     </div>
   );

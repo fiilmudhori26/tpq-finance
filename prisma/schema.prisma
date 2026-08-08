@@ -85,6 +85,7 @@ model Tenant {
   sppRates  SppRate[]
   pengaturans Pengaturan[]
   auditLogs AuditLog[]
+  waliTokens WaliToken[]
 }
 
 model User {
@@ -172,6 +173,7 @@ model Santri {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
   pembayarans Pembayaran[]
+  waliTokens  WaliToken[]
 
   @@unique([tenantId, noInduk])
   @@index([tenantId, status])
@@ -206,7 +208,7 @@ model Transaksi {
   jumlah     Decimal         @db.Decimal(14, 0)
   tanggal    DateTime
   status     StatusTransaksi @default(LUNAS)
-  buktiUrl   String?         @db.VarChar(255)
+  buktiUrl   String?         @db.Text
   createdById String
   createdBy  User            @relation("TransaksiCreator", fields: [createdById], references: [id], onDelete: Restrict)
   deletedAt  DateTime?
@@ -243,6 +245,21 @@ model Pembayaran {
 
   @@unique([tenantId, santriId, bulan])
   @@index([tenantId, santriId, createdAt])
+}
+
+// Link unik portal wali — token rahasia per santri (Sprint 12)
+model WaliToken {
+  id        String   @id @default(uuid())
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  santriId  String   @unique
+  santri    Santri   @relation(fields: [santriId], references: [id], onDelete: Restrict)
+  token     String   @unique @db.VarChar(64)
+  aktif     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
 }
 
 model SppRate {

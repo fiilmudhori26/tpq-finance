@@ -1,103 +1,80 @@
 "use client";
 
 import { useState } from "react";
-import { TrendingUp, PieChart, Clock, Plus } from "lucide-react";
-import { PENGELUARAN } from "@/lib/mock-transaksi";
+import { useRouter } from "next/navigation";
+import { Wallet, PieChart, TrendingDown } from "lucide-react";
+import { type TransaksiRow } from "@/lib/data";
 import { formatRupiah, formatTanggal } from "@/lib/format";
+import SummaryCard from "@/components/ui/summary-card";
 import Card from "@/components/ui/card";
 import CategoryBadge from "@/components/ui/category-badge";
 import ActionBar from "./action-bar";
 import TableRowMenu from "./table-row-menu";
-import ModalPengeluaran from "./modal-pengeluaran";
+import ModalPengeluaran, { type KategoriOption } from "./modal-pengeluaran";
+import PaginationBar from "./pagination-bar";
 
-function BentoCard({
-  icon: Icon,
-  blob,
-  label,
-  value,
-  footer,
-  footerTone = "text-on-surface-variant",
-}: {
-  icon: typeof TrendingUp;
-  blob: string;
-  label: string;
-  value: string;
-  footer: string;
-  footerTone?: string;
-}) {
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-6 shadow-soft transition-transform hover:-translate-y-1">
-      <div className={`absolute -right-8 -top-8 h-28 w-28 rounded-full ${blob}`} aria-hidden />
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-on-surface-variant">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-bold tabular-nums text-on-surface md:text-3xl">{value}</p>
-      <p className={`mt-2 flex items-center gap-1.5 text-xs font-medium ${footerTone}`}>
-        <Icon className="h-3.5 w-3.5" aria-hidden /> {footer}
-      </p>
-    </div>
-  );
+interface Props {
+  initialData: TransaksiRow[];
+  total: number;
+  page: number;
+  perPage: number;
+  kategoris: KategoriOption[];
 }
 
-export default function PengeluaranView() {
+export default function PengeluaranView({ initialData, total, page, perPage, kategoris }: Props) {
   const [open, setOpen] = useState(false);
-  const total = PENGELUARAN.reduce((a, t) => a + t.jumlah, 0);
+  const router = useRouter();
 
-  const kategoriTerbesar = PENGELUARAN.reduce<Record<string, number>>((acc, t) => {
+  const totalNominal = initialData.reduce((a, t) => a + t.jumlah, 0);
+  const kategoriTerbesar = initialData.reduce<Record<string, number>>((acc, t) => {
     acc[t.kategori] = (acc[t.kategori] ?? 0) + t.jumlah;
     return acc;
   }, {});
   const [topKategori, topJumlah] =
     Object.entries(kategoriTerbesar).sort((a, b) => b[1] - a[1])[0] ?? ["", 0];
-  const porsi = total ? Math.round((topJumlah / total) * 100) : 0;
+  const porsi = totalNominal ? Math.round((topJumlah / totalNominal) * 100) : 0;
+
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const current = Math.min(page, pages);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-on-surface">Manajemen Pengeluaran</h1>
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Pantau dan kelola semua biaya operasional TPQ secara transparan.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95"
-        >
-          <Plus className="h-4 w-4" aria-hidden /> Tambah Pengeluaran
-        </button>
+      <div>
+        <h1 className="text-2xl font-semibold text-on-surface">Manajemen Pengeluaran</h1>
+        <p className="mt-1 text-sm text-on-surface-variant">
+          Pantau dan kelola semua biaya operasional TPQ secara transparan.
+        </p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-3">
-        <BentoCard
-          icon={TrendingUp}
-          blob="bg-primary/5"
-          label="Total Bulan Ini"
-          value={formatRupiah(total)}
-          footer="+12.5% vs bulan lalu"
-          footerTone="text-error"
+        <SummaryCard
+          icon={Wallet}
+          iconBg="bg-error/10"
+          iconColor="text-error"
+          label="Total Pengeluaran (Halaman Ini)"
+          value={formatRupiah(totalNominal)}
         />
-        <BentoCard
+        <SummaryCard
           icon={PieChart}
-          blob="bg-secondary/5"
+          iconBg="bg-secondary/10"
+          iconColor="text-secondary"
           label="Kategori Terbesar"
           value={topKategori}
-          footer={`${porsi}% dari total pengeluaran`}
-          footerTone="text-primary"
+          sub={`${porsi}% dari total pengeluaran`}
         />
-        <BentoCard
-          icon={Clock}
-          blob="bg-error/5"
-          label="Sisa Anggaran Ops"
-          value={formatRupiah(1_750_000)}
-          footer="Berakhir dalam 12 hari"
+        <SummaryCard
+          icon={TrendingDown}
+          iconBg="bg-tertiary-fixed/20"
+          iconColor="text-tertiary"
+          label="Total Transaksi"
+          value={total.toLocaleString("id-ID")}
+          sub="transaksi tercatat"
         />
       </div>
 
       <ActionBar
         title="Pengeluaran"
-        periode="Agustus 2024"
+        periode={new Date().toLocaleString("id-ID", { month: "long", year: "numeric" })}
         onAdd={() => setOpen(true)}
         addLabel="Tambah Pengeluaran"
       />
@@ -107,7 +84,7 @@ export default function PengeluaranView() {
           <div>
             <h2 className="text-lg font-semibold text-on-surface">Riwayat Pengeluaran</h2>
             <p className="text-sm text-on-surface-variant">
-              Menampilkan {PENGELUARAN.length} transaksi terakhir
+              Menampilkan {initialData.length} dari {total} transaksi
             </p>
           </div>
         </div>
@@ -124,11 +101,10 @@ export default function PengeluaranView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
-              {PENGELUARAN.map((t) => (
+              {initialData.map((t) => (
                 <tr key={t.id} className="transition-colors hover:bg-primary/5">
                   <td className="whitespace-nowrap px-6 py-4">
                     <p className="text-sm font-bold text-on-surface">{formatTanggal(t.tanggal)}</p>
-                    <p className="text-xs text-on-surface-variant">10:00 WIB</p>
                   </td>
                   <td className="px-6 py-4">
                     <CategoryBadge kategori={t.kategori} />
@@ -137,15 +113,30 @@ export default function PengeluaranView() {
                     {t.deskripsi}
                   </td>
                   <td className="px-6 py-4">
-                    <span
-                      className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container text-lg text-on-surface-variant transition-shadow hover:ring-2 hover:ring-primary"
-                      role="img"
-                      aria-label="Bukti transaksi"
-                    >
-                      🧾
-                    </span>
+                    {t.buktiUrl ? (
+                      <a
+                        href={t.buktiUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        title="Lihat bukti nota"
+                      >
+                        <img
+                          src={t.buktiUrl}
+                          alt={`Bukti nota ${t.deskripsi}`}
+                          className="h-12 w-12 rounded-lg object-cover ring-1 ring-outline-variant transition-shadow hover:ring-2 hover:ring-primary"
+                        />
+                      </a>
+                    ) : (
+                      <span
+                        className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-container text-lg text-on-surface-variant"
+                        role="img"
+                        aria-label="Tanpa bukti"
+                      >
+                        🧾
+                      </span>
+                    )}
                   </td>
-                  <td className="whitespace-nowrap px-6 py-4 text-right font-bold tabular-nums text-on-surface">
+                  <td className="whitespace-nowrap px-6 py-4 text-right font-bold tabular-nums text-error">
                     {formatRupiah(t.jumlah)}
                   </td>
                   <td className="px-6 py-4">
@@ -153,15 +144,27 @@ export default function PengeluaranView() {
                   </td>
                 </tr>
               ))}
+              {initialData.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-6 py-12 text-center text-on-surface-variant">
+                    Belum ada data pengeluaran.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-outline-variant/20 bg-surface-container-low px-6 py-4 text-sm text-on-surface-variant">
-          <p>Menampilkan 1-{PENGELUARAN.length} dari {PENGELUARAN.length} transaksi</p>
-        </div>
+        <PaginationBar total={total} page={current} perPage={perPage} basePath="/pengeluaran" />
       </Card>
 
-      <ModalPengeluaran open={open} onClose={() => setOpen(false)} />
+      <ModalPengeluaran
+        open={open}
+        onClose={() => {
+          setOpen(false);
+          router.refresh();
+        }}
+        kategoris={kategoris}
+      />
     </div>
   );
 }

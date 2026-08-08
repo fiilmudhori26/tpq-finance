@@ -12,6 +12,7 @@ export interface SantriRow {
   wali: string;
   noHp: string;
   statusSpp: "Lunas" | "Tunggakan";
+  sppBulanan: number;
   tanggalMasuk: string;
 }
 
@@ -26,6 +27,7 @@ export interface TransaksiRow {
   status: "Lunas" | "Proses" | "Dibatalkan";
   catatan?: string;
   ikon?: string;
+  buktiUrl?: string | null;
 }
 
 export interface KpiData {
@@ -114,6 +116,13 @@ export const getSantriList = cache(async (params: {
   });
   const sppMap = new Map(pembayarans.map((p) => [p.santriId, p.status]));
 
+  // Tarif SPP per jenjang (SppRate) — dipakai untuk kolom tarif & ringkasan
+  const rates = await db.sppRate.findMany({
+    where: { tenantId, deletedAt: null },
+    select: { jenjang: true, nominal: true },
+  });
+  const rateMap = new Map(rates.map((r) => [r.jenjang, Number(r.nominal)]));
+
   const data: SantriRow[] = rows.map((s) => ({
     id: s.id,
     noInduk: s.noInduk,
@@ -123,6 +132,7 @@ export const getSantriList = cache(async (params: {
     wali: s.namaWali ?? "-",
     noHp: s.noHpWali ?? "-",
     statusSpp: sppMap.get(s.id) === "LUNAS" ? "Lunas" : "Tunggakan",
+    sppBulanan: rateMap.get(s.jenjang) ?? 0,
     tanggalMasuk: s.createdAt.toISOString(),
   }));
 
@@ -208,6 +218,7 @@ export const getTransaksiList = cache(async (params: {
     status: t.status === "LUNAS" ? "Lunas" : t.status === "PROSES" ? "Proses" : "Dibatalkan",
     catatan: t.keterangan ?? undefined,
     ikon: t.jenis === "PEMASUKAN" ? "school" : "zap",
+    buktiUrl: t.buktiUrl,
   }));
 
   return { data, total };
@@ -224,6 +235,144 @@ export const getKategoriList = cache(async (jenis?: "PEMASUKAN" | "PENGELUARAN")
 export const getSppRates = cache(async () => {
   const tenantId = await getTenantId();
   return db.sppRate.findMany({ where: { tenantId, deletedAt: null }, orderBy: { jenjang: "asc" } });
+});
+
+export interface ProfilSantri {
+  id: string;
+  noInduk: string;
+  nama: string;
+  jenjang: string;
+  kelas: string;
+  wali: string;
+  noHp: string;
+  statusSpp: "Lunas" | "Tunggakan";
+  lunasBulan: number;
+  tunggakanBulan: number;
+  waliToken?: string | null;
+}
+
+// Profil lengkap + status SPP + token portal wali
+export const getProfilSantri = cache(async (id: string) => {
+  const tenantId = await getTenantId();
+  const s = await db.santri.findFirst({
+    where: { id, tenantId, deletedAt: null },
+    include: {
+      pembayarans: { where: { deletedAt: null } },
+      waliTokens: { select: { token: true } },
+    },
+  });
+  if (!s) return null;
+
+  const rate = await db.sppRate.findFirst({
+    where: { tenantId, jenjang: s.jenjang, deletedAt: null },
+    select: { nominal: true },
+  });
+
+  const now = new Date();
+  const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lunasSet = new Set(
+    s.pembayarans.map((p) => `${p.bulan.getFullYear()}-${String(p.bulan.getMonth() + 1).padStart(2, "0")}`)
+  );
+
+  const tahunAjar = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  let tunggakanBulan = 0;
+  for (let d = new Date(tahunAjar, 6, 1); d < bulanIni; d.setMonth(d.getMonth() + 1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!lunasSet.has(key)) tunggakanBulan++;
+  }
+
+  const sppBulanan = Number(rate?.nominal ?? 0);
+  const lunasBulanIni = lunasSet.has(
+    `${bulanIni.getFullYear()}-${String(bulanIni.getMonth() + 1).padStart(2, "0")}`
+  );
+
+  return {
+    id: s.id,
+    noInduk: s.noInduk,
+    nama: s.nama,
+    jenjang: s.jenjang,
+    kelas: s.kelas,
+    wali: s.namaWali ?? "-",
+    noHp: s.noHpWali ?? "-",
+    statusSpp: lunasBulanIni ? "Lunas" : "Tunggakan",
+    lunasBulan: lunasSet.size,
+    tunggakanBulan,
+    waliToken: s.waliTokens[0]?.token ?? null,
+    sppBulanan,
+  } satisfies ProfilSantri & { sppBulanan: number };
+});
+
+export interface SantriDetail {
+  id: string;
+  noInduk: string;
+  nama: string;
+  jenjang: string;
+  kelas: string;
+  wali: string;
+  noHp: string;
+  sppBulanan: number;
+  lunasBulan: number;
+  tunggakanBulan: number;
+  riwayat: {
+    noReferensi: string;
+    tanggal: string;
+    bulan: string; // YYYY-MM
+    nominal: number;
+  }[];
+}
+
+// Detail SPP per santri (di-cache per noInduk)
+export const getSantriDetail = cache(async (noInduk: string) => {
+  const tenantId = await getTenantId();
+  const s = await db.santri.findFirst({
+    where: { tenantId, noInduk, deletedAt: null },
+    include: {
+      pembayarans: { where: { deletedAt: null }, orderBy: { bulan: "asc" } },
+    },
+  });
+  if (!s) return null;
+
+  // Tarif SPP per jenjang
+  const rate = await db.sppRate.findFirst({
+    where: { tenantId, jenjang: s.jenjang, deletedAt: null },
+    select: { nominal: true },
+  });
+  const sppBulanan = Number(rate?.nominal ?? 0);
+
+  const now = new Date();
+  const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  const riwayat = s.pembayarans.map((p) => ({
+    noReferensi: p.noReferensi,
+    tanggal: p.paidAt.toISOString(),
+    bulan: `${p.bulan.getFullYear()}-${String(p.bulan.getMonth() + 1).padStart(2, "0")}`,
+    nominal: Number(p.nominal),
+  }));
+
+  // Bulan yang sudah lunas (dari riwayat)
+  const lunasSet = new Set(riwayat.map((r) => r.bulan));
+  // Tunggakan: bulan-bulan dari awal tahun ajaran s/d bulan lalu yang belum lunas
+  const tahunAjar = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
+  let tunggakanBulan = 0;
+  const bulanAwal = new Date(tahunAjar, 6, 1); // Juli
+  for (let d = new Date(bulanAwal); d < bulanIni; d.setMonth(d.getMonth() + 1)) {
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (!lunasSet.has(key)) tunggakanBulan++;
+  }
+
+  return {
+    id: s.id,
+    noInduk: s.noInduk,
+    nama: s.nama,
+    jenjang: s.jenjang,
+    kelas: s.kelas,
+    wali: s.namaWali ?? "-",
+    noHp: s.noHpWali ?? "-",
+    sppBulanan,
+    lunasBulan: lunasSet.size,
+    tunggakanBulan,
+    riwayat,
+  } satisfies SantriDetail;
 });
 
 export const getDashboardData = cache(async () => {
@@ -349,6 +498,25 @@ export const getLaporanData = cache(async () => {
   const totalKeluar = Number(pengeluaranAgg._sum.jumlah ?? 0);
   const saldo = totalMasuk - totalKeluar;
 
+  // Trend 6 bulan (sama dengan beranda)
+  const now = new Date();
+  const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  const trend: TrendBulan[] = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
+    const [pm, pk] = await Promise.all([
+      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PEMASUKAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
+      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PENGELUARAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
+    ]);
+    trend.push({
+      bulan: labels[d.getMonth()],
+      pemasukan: Math.round((Number(pm._sum.jumlah ?? 0) / 1_000_000) * 10) / 10,
+      pengeluaran: Math.round((Number(pk._sum.jumlah ?? 0) / 1_000_000) * 10) / 10,
+      aktif: i === 0,
+    });
+  }
+
   // Rekap per kategori
   const transaksiAll = await db.transaksi.findMany({
     where: { tenantId, deletedAt: null },
@@ -378,6 +546,7 @@ export const getLaporanData = cache(async () => {
     totalMasuk,
     totalKeluar,
     saldo,
+    trend,
     rekap,
     tunggakanCount,
     totalSantri: santri.length,

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "db:seed": "prisma db seed",
-    "db:check": "tsx scripts/check-db.ts"
+    "db:check": "tsx scripts/check-db.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.9.1",
@@ -21,11 +23,12 @@
     "prisma": "^7.9.1",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "recharts": "^3.10.1",
+    "sonner": "^2.0.7",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
-    "tsx": "^4.19.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -33,6 +36,8 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.22",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.19.2",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
   }
 }

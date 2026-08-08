@@ -1,17 +1,63 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import { X } from "lucide-react";
+import { toast } from "sonner";
+import { tambahTransaksi } from "@/actions/transaksi";
 
-const KATEGORI = ["SPP Santri", "Donasi/Infaq", "Sewa Aset", "Lainnya"];
+export interface KategoriOption {
+  id: string;
+  nama: string;
+}
 
 export default function ModalPemasukan({
   open,
   onClose,
+  kategoris = [],
 }: {
   open: boolean;
   onClose: () => void;
+  kategoris?: KategoriOption[];
 }) {
+  const [kategoriId, setKategoriId] = useState(kategoris[0]?.id ?? "");
+  const [sumber, setSumber] = useState("");
+  const [jumlah, setJumlah] = useState("");
+  const [tanggal, setTanggal] = useState(() => new Date().toISOString().split("T")[0]);
+  const [catatan, setCatatan] = useState("");
+  const [isPending, startTransition] = useTransition();
+
   if (!open) return null;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const nominal = Number(jumlah);
+    if (!nominal || nominal <= 0) {
+      toast.error("Jumlah nominal harus lebih dari 0");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await tambahTransaksi({
+        jenis: "PEMASUKAN",
+        kategoriId: kategoriId || (kategoris[0]?.id ?? ""),
+        sumber,
+        keterangan: catatan,
+        jumlah: nominal,
+        tanggal: new Date(tanggal),
+      });
+
+      if (res.success) {
+        toast.success(res.message);
+        setSumber("");
+        setJumlah("");
+        setCatatan("");
+        onClose();
+      } else {
+        toast.error(res.message ?? "Gagal menyimpan pemasukan");
+      }
+    });
+  };
+
   return (
     <div
       role="dialog"
@@ -37,32 +83,34 @@ export default function ModalPemasukan({
             type="button"
             aria-label="Tutup"
             onClick={onClose}
-            className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high"
+            disabled={isPending}
+            className="rounded-full p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-50"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form
-          className="mt-6 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            onClose();
-          }}
-        >
-          <div>
-            <label htmlFor="kategori" className="mb-1 block text-sm font-medium text-on-surface-variant">
-              Kategori
-            </label>
-            <select
-              id="kategori"
-              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
-            >
-              {KATEGORI.map((k) => (
-                <option key={k}>{k}</option>
-              ))}
-            </select>
-          </div>
+        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
+          {kategoris.length > 0 && (
+            <div>
+              <label htmlFor="kategori" className="mb-1 block text-sm font-medium text-on-surface-variant">
+                Kategori
+              </label>
+              <select
+                id="kategori"
+                value={kategoriId}
+                onChange={(e) => setKategoriId(e.target.value)}
+                disabled={isPending}
+                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
+              >
+                {kategoris.map((k) => (
+                  <option key={k.id} value={k.id}>
+                    {k.nama}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div>
             <label htmlFor="sumber" className="mb-1 block text-sm font-medium text-on-surface-variant">
               Sumber Dana
@@ -71,8 +119,11 @@ export default function ModalPemasukan({
               id="sumber"
               type="text"
               required
+              value={sumber}
+              onChange={(e) => setSumber(e.target.value)}
+              disabled={isPending}
               placeholder="Nama donatur / sumber"
-              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
@@ -83,10 +134,13 @@ export default function ModalPemasukan({
               <input
                 id="jumlah"
                 type="number"
-                min={0}
+                min={1}
                 required
+                value={jumlah}
+                onChange={(e) => setJumlah(e.target.value)}
+                disabled={isPending}
                 placeholder="Rp"
-                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm font-bold text-primary tabular-nums outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm font-bold text-primary tabular-nums outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
             </div>
             <div>
@@ -97,8 +151,10 @@ export default function ModalPemasukan({
                 id="tanggal"
                 type="date"
                 required
-                defaultValue="2024-08-16"
-                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+                value={tanggal}
+                onChange={(e) => setTanggal(e.target.value)}
+                disabled={isPending}
+                className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
               />
             </div>
           </div>
@@ -109,8 +165,11 @@ export default function ModalPemasukan({
             <textarea
               id="catatan"
               rows={3}
+              value={catatan}
+              onChange={(e) => setCatatan(e.target.value)}
+              disabled={isPending}
               placeholder="Catatan tambahan (opsional)"
-              className="w-full resize-none rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
+              className="w-full resize-none rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
             />
           </div>
 
@@ -118,15 +177,17 @@ export default function ModalPemasukan({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-outline-variant bg-white py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container"
+              disabled={isPending}
+              className="flex-1 rounded-lg border border-outline-variant bg-white py-3 text-sm font-bold text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="flex-[2] rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95"
+              disabled={isPending}
+              className="flex-[2] rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
             >
-              Simpan Data
+              {isPending ? "Menyimpan..." : "Simpan Data"}
             </button>
           </div>
         </form>

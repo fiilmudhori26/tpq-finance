@@ -1,9 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
-import { UserPlus } from "lucide-react";
-import { SANTRI, KELAS_LABEL, type Santri } from "@/lib/mock-santri";
+import { useCallback, useState, useTransition } from "react";
+import { UserPlus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { type SantriRow } from "@/lib/data";
+import { hapusSantri } from "@/actions/santri";
+import { KELAS_LABEL } from "@/lib/mock-santri";
 import FilterCard from "@/components/features/filter-card";
 import PaginationBar from "@/components/features/pagination-bar";
 import TableRowActions from "@/components/features/table-row-actions";
@@ -12,20 +15,24 @@ import ClassBadge from "@/components/ui/class-badge";
 import StatusBadge from "@/components/ui/status-badge";
 import ModalSantri from "@/components/features/modal-santri";
 
-const PER_PAGE = 8;
+interface Props {
+  initialData: SantriRow[];
+  total: number;
+  page: number;
+  perPage: number;
+}
 
-export default function SantriView() {
+export default function SantriView({ initialData, total, page, perPage }: Props) {
   const router = useRouter();
   const params = useSearchParams();
 
   const jenjang = params.get("jenjang") ?? "";
   const kelas = params.get("kelas") ?? "";
   const status = params.get("status") ?? "";
-  const q = params.get("q") ?? "";
-  const page = Math.max(1, Number(params.get("page") ?? 1));
 
   const [modal, setModal] = useState(false);
-  const [edit, setEdit] = useState<Santri | null>(null);
+  const [edit, setEdit] = useState<SantriRow | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const setParam = useCallback(
     (patch: Record<string, string>) => {
@@ -40,26 +47,20 @@ export default function SantriView() {
     [params, router]
   );
 
-  const filtered = useMemo(() => {
-    let r = SANTRI;
-    if (jenjang) r = r.filter((s) => s.jenjang === jenjang);
-    if (kelas) r = r.filter((s) => s.kelas === kelas);
-    if (status) r = r.filter((s) => s.statusSpp === status);
-    if (q)
-      r = r.filter(
-        (s) =>
-          s.nama.toLowerCase().includes(q.toLowerCase()) ||
-          s.noInduk.includes(q) ||
-          s.wali.toLowerCase().includes(q.toLowerCase())
-      );
-    return r;
-  }, [jenjang, kelas, status, q]);
+  const handleHapus = (id: string) => {
+    startTransition(async () => {
+      const res = await hapusSantri(id);
+      if (res.success) {
+        toast.success(res.message ?? "Data santri diproses.");
+        router.refresh();
+      } else {
+        toast.error(res.message ?? "Gagal memproses santri.");
+      }
+    });
+  };
 
-  const total = filtered.length;
-  const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+  const pages = Math.max(1, Math.ceil(total / perPage));
   const current = Math.min(page, pages);
-  const rows = filtered.slice((current - 1) * PER_PAGE, current * PER_PAGE);
-  const santriBaru = SANTRI.filter((s) => s.tanggalMasuk.startsWith("2024-0")).length;
 
   return (
     <div className="space-y-6">
@@ -67,7 +68,7 @@ export default function SantriView() {
         <div>
           <h1 className="text-2xl font-semibold text-on-surface">Data Master Santri</h1>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Kelola data seluruh santri TPQ Al-Hidayah secara terpusat.
+            Kelola data seluruh santri TPQ secara terpusat.
           </p>
         </div>
         <button
@@ -98,11 +99,9 @@ export default function SantriView() {
               className="absolute -right-6 -top-6 h-32 w-32 rounded-full bg-white/10"
               aria-hidden
             />
-            <p className="text-xs font-bold uppercase tracking-wider">
-              Total Santri Aktif
-            </p>
-            <p className="text-5xl font-bold">{SANTRI.length}</p>
-            <p className="text-sm font-medium">+{santriBaru} Santri bulan ini</p>
+            <p className="text-xs font-bold uppercase tracking-wider">Total Santri</p>
+            <p className="text-5xl font-bold">{total}</p>
+            <p className="text-sm font-medium">Tercatat dalam sistem</p>
           </div>
         </div>
       </div>
@@ -120,7 +119,7 @@ export default function SantriView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-outline-variant/20">
-              {rows.map((s, i) => (
+              {initialData.map((s, i) => (
                 <tr key={s.id} className="group transition-colors hover:bg-primary/5">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -142,32 +141,46 @@ export default function SantriView() {
                     <StatusBadge status={s.statusSpp} dot />
                   </td>
                   <td className="px-6 py-4">
-                    <TableRowActions
-                      href={`/santri/${s.id}`}
-                      onEdit={() => {
-                        setEdit(s);
-                        setModal(true);
-                      }}
-                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <TableRowActions
+                        href={`/santri/${s.id}`}
+                        onEdit={() => {
+                          setEdit(s);
+                          setModal(true);
+                        }}
+                      />
+                      <button
+                        type="button"
+                        aria-label="Hapus santri"
+                        disabled={isPending}
+                        onClick={() => handleHapus(s.id)}
+                        className="rounded-full p-2 text-error hover:bg-error/10 disabled:opacity-40"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && (
+              {initialData.length === 0 && (
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-on-surface-variant">
-                    Belum ada data.
+                    Belum ada data santri.
                   </td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
-        <PaginationBar total={total} page={current} perPage={PER_PAGE} basePath="/santri" />
+        <PaginationBar total={total} page={current} perPage={perPage} basePath="/santri" />
       </div>
 
       <ModalSantri
         open={modal}
-        onClose={() => setModal(false)}
+        onClose={() => {
+          setModal(false);
+          router.refresh();
+        }}
         edit={edit}
       />
     </div>
