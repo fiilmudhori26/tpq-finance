@@ -131,7 +131,7 @@ async function main() {
   });
 
   // 3. User admin
-  const email = process.env.SEED_ADMIN_EMAIL ?? "tpqdarulquran@gmail.com";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "admintpq@gmail.com";
   const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.upsert({
