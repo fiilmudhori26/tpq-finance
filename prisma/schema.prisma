@@ -11,6 +11,7 @@ enum Role {
   SUPER_ADMIN
   BENDAHARA
   VIEWER
+  WALI
 }
 
 enum StatusUser {
@@ -107,6 +108,7 @@ model User {
   transaksiDibuat Transaksi[] @relation("TransaksiCreator")
   pembayaranDibuat Pembayaran[] @relation("PembayaranCreator")
   auditLogs    AuditLog[]
+  santris      Santri[] @relation("WaliUserSantri")
 }
 
 // ---- Better Auth tables (adaptor prisma) ----
@@ -167,6 +169,8 @@ model Santri {
   kelas      String       @db.VarChar(50)
   namaWali   String?      @db.VarChar(100)
   noHpWali   String?      @db.VarChar(20)
+  waliUserId String?
+  waliUser   User?        @relation("WaliUserSantri", fields: [waliUserId], references: [id], onDelete: SetNull)
   status     StatusSantri @default(AKTIF)
   keterangan String?      @db.VarChar(255)
   deletedAt  DateTime?
@@ -179,6 +183,7 @@ model Santri {
   @@index([tenantId, status])
   @@index([tenantId, jenjang])
   @@index([tenantId, kelas])
+  @@index([waliUserId])
 }
 
 model Kategori {

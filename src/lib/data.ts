@@ -261,6 +261,7 @@ export interface ProfilSantri {
   lunasBulan: number;
   tunggakanBulan: number;
   waliToken?: string | null;
+  akunWali?: { email: string } | null;
 }
 
 // Profil lengkap + status SPP + token portal wali
@@ -271,6 +272,7 @@ export const getProfilSantri = cache(async (id: string) => {
     include: {
       pembayarans: { where: { deletedAt: null } },
       waliTokens: { select: { token: true } },
+      waliUser: { select: { email: true } },
     },
   });
   if (!s) return null;
@@ -310,6 +312,7 @@ export const getProfilSantri = cache(async (id: string) => {
     lunasBulan: lunasSet.size,
     tunggakanBulan,
     waliToken: s.waliTokens[0]?.token ?? null,
+    akunWali: s.waliUser ? { email: s.waliUser.email } : null,
     sppBulanan,
   } satisfies ProfilSantri & { sppBulanan: number };
 });
@@ -326,10 +329,13 @@ export interface SantriDetail {
   lunasBulan: number;
   tunggakanBulan: number;
   riwayat: {
+    id: string;
     noReferensi: string;
     tanggal: string;
     bulan: string; // YYYY-MM
     nominal: number;
+    status: "LUNAS" | "DIBATALKAN";
+    metode: "TUNAI" | "TRANSFER";
   }[];
 }
 
@@ -355,14 +361,17 @@ export const getSantriDetail = cache(async (noInduk: string) => {
   const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
 
   const riwayat = s.pembayarans.map((p) => ({
+    id: p.id,
     noReferensi: p.noReferensi,
     tanggal: p.paidAt.toISOString(),
     bulan: `${p.bulan.getFullYear()}-${String(p.bulan.getMonth() + 1).padStart(2, "0")}`,
     nominal: Number(p.nominal),
+    status: p.status,
+    metode: p.metode,
   }));
 
-  // Bulan yang sudah lunas (dari riwayat)
-  const lunasSet = new Set(riwayat.map((r) => r.bulan));
+  // Bulan yang sudah lunas (dari riwayat) — yang dibatalkan tidak dihitung lunas
+  const lunasSet = new Set(riwayat.filter((r) => r.status === "LUNAS").map((r) => r.bulan));
   // Tunggakan: bulan-bulan dari awal tahun ajaran s/d bulan lalu yang belum lunas
   const tahunAjar = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1;
   let tunggakanBulan = 0;

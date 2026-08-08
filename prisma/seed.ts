@@ -265,6 +265,47 @@ async function main() {
     noUrut++;
   }
 
+  // 7. Akun wali demo (login email+password)
+  const waliEmail = "wali.demo@tpq.test";
+  const waliPasswordHash = await hashPassword("wali1234");
+  const firstSantri = await prisma.santri.findFirstOrThrow({
+    where: { tenantId: tenant.id },
+    orderBy: { createdAt: "asc" },
+  });
+  const waliUser = await prisma.user.upsert({
+    where: { email: waliEmail },
+    update: { role: "WALI" },
+    create: {
+      tenantId: tenant.id,
+      name: "Wali Demo",
+      email: waliEmail,
+      emailVerified: true,
+      role: "WALI",
+    },
+  });
+  const waliAccount = await prisma.account.findFirst({
+    where: { userId: waliUser.id, providerId: "credential" },
+  });
+  if (waliAccount) {
+    await prisma.account.update({
+      where: { id: waliAccount.id },
+      data: { password: waliPasswordHash },
+    });
+  } else {
+    await prisma.account.create({
+      data: {
+        userId: waliUser.id,
+        providerId: "credential",
+        accountId: waliUser.id,
+        password: waliPasswordHash,
+      },
+    });
+  }
+  await prisma.santri.update({
+    where: { id: firstSantri.id },
+    data: { waliUserId: waliUser.id },
+  });
+
   console.log(
     `Seed OK: tenant=${tenant.slug}, santri=${SANTRI.length}, pembayaran=${totalPembayaran}, tahunAjaran=${TAHUN_AJAR}`
   );

@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+export const akunWaliSchema = z.object({
+  santriId: z.string().min(1, "Santri wajib dipilih"),
+  email: z.string().email("Format email tidak valid"),
+  password: z.string().min(8, "Password minimal 8 karakter"),
+});
+
 export const loginSchema = z.object({
   email: z.string().email("Format email tidak valid"),
   password: z.string().min(8, "Password minimal 8 karakter"),
@@ -40,8 +46,17 @@ export const pembayaranSppSchema = z.object({
   catatan: z.string().optional().nullable(),
 });
 
+export const editPembayaranSppSchema = z.object({
+  id: z.string().min(1, "ID pembayaran wajib ada"),
+  nominal: z.number().gt(0, "Nominal SPP harus lebih dari 0"),
+  metode: z.enum(["TUNAI", "TRANSFER"]),
+  status: z.enum(["LUNAS", "DIBATALKAN"]),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SantriInput = z.infer<typeof santriSchema>;
 export type RenameKelasInput = z.infer<typeof renameKelasSchema>;
 export type TransaksiInput = z.infer<typeof transaksiSchema>;
 export type PembayaranSppInput = z.infer<typeof pembayaranSppSchema>;
+export type EditPembayaranSppInput = z.infer<typeof editPembayaranSppSchema>;
+export type AkunWaliInput = z.infer<typeof akunWaliSchema>;

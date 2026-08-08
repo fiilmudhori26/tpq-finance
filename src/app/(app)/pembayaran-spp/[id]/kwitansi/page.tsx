@@ -49,8 +49,8 @@ export default async function KwitansiPage({
   });
 
   return (
-    <div className="mx-auto max-w-2xl bg-white p-10 text-black">
-      <div className="flex items-start justify-between border-b-2 border-black pb-6">
+    <div className="mx-auto max-w-2xl bg-white p-6 text-black sm:p-10">
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b-2 border-black pb-6">
         <div>
           <h1 className="text-2xl font-bold">TPQ DARUL QUR&apos;AN</h1>
           <p className="mt-1 text-sm text-gray-600">{pembayaran.tenant.nama} — Kwitansi Pembayaran SPP</p>
@@ -62,7 +62,7 @@ export default async function KwitansiPage({
       </div>
 
       <div className="mt-8 space-y-4 text-sm">
-        <div className="grid grid-cols-[140px_1fr] gap-2">
+        <div className="grid grid-cols-[110px_1fr] gap-2 sm:grid-cols-[140px_1fr]">
           <span className="font-medium text-gray-500">Sudah terima dari</span>
           <span className="font-bold">Bpk/Ibu {pembayaran.santri.namaWali ?? pembayaran.santri.nama}</span>
           <span className="font-medium text-gray-500">Wali dari</span>
@@ -79,7 +79,7 @@ export default async function KwitansiPage({
         <p className="text-xs text-gray-500">Dibayar pada {tanggal} · Dicatat oleh {pembayaran.createdBy.name}</p>
       </div>
 
-      <div className="mt-12 flex items-end justify-between">
+      <div className="mt-10 flex flex-wrap items-end justify-between gap-6 sm:mt-12">
         <p className="text-xs text-gray-400">Kwitansi ini sah tanpa tanda tangan — tercatat digital dalam sistem.</p>
         <div className="text-center">
           <p className="text-sm">Bendahara,</p>

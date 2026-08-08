@@ -9,7 +9,7 @@ export default function TableRowActions({
   onEdit?: () => void;
 }) {
   return (
-    <div className="flex justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+    <div className="flex justify-end gap-1 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
       <Link
         href={href}
         aria-label="Lihat profil"

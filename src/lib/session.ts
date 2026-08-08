@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
-export type Role = "SUPER_ADMIN" | "BENDAHARA" | "VIEWER";
+export type Role = "SUPER_ADMIN" | "BENDAHARA" | "VIEWER" | "WALI";
 
 export type SessionUser = {
   id: string;

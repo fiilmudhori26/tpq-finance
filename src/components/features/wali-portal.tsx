@@ -1,7 +1,9 @@
 "use client";
 
-import { CheckCircle2, AlertCircle, GraduationCap } from "lucide-react";
+import { CheckCircle2, AlertCircle, GraduationCap, LogOut } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/lib/format";
+import { authClient } from "@/lib/auth-client";
 
 const BULAN = [
   "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
@@ -24,6 +26,8 @@ export default function WaliPortal({
   sppBulanan,
   tunggakan,
   riwayat,
+  login = false,
+  showHeader = true,
 }: {
   nama: string;
   noInduk: string;
@@ -32,22 +36,43 @@ export default function WaliPortal({
   sppBulanan: number;
   tunggakan: string[];
   riwayat: RiwayatItem[];
+  login?: boolean;
+  showHeader?: boolean;
 }) {
+  const router = useRouter();
   const lunasSet = new Set(riwayat.map((r) => r.bulan));
   const totalTunggakan = tunggakan.length * sppBulanan;
   const now = new Date();
   const bulanTahunIni = now.getMonth() + 1;
 
+  async function handleLogout() {
+    await authClient.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
-    <main className="min-h-screen bg-surface-container-low px-4 py-10">
-      <div className="mx-auto max-w-2xl space-y-6">
+    <section className="mx-auto w-full max-w-2xl space-y-6">
+      {showHeader && (
         <header className="text-center">
+          {login && (
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="inline-flex items-center gap-2 rounded-xl border border-outline-variant bg-white px-4 py-2 text-sm font-bold text-on-surface-variant hover:bg-surface-container"
+              >
+                <LogOut className="h-4 w-4" aria-hidden /> Keluar
+              </button>
+            </div>
+          )}
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-white shadow-soft">
             <GraduationCap className="h-7 w-7" aria-hidden />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-on-surface">Portal Wali Santri</h1>
           <p className="mt-1 text-sm text-on-surface-variant">TPQ Darul Qur&apos;an — informasi SPP anak</p>
         </header>
+      )}
 
         <section className="rounded-2xl bg-surface-container-lowest p-6 shadow-soft">
           <div className="flex items-center gap-4">
@@ -126,9 +151,10 @@ export default function WaliPortal({
         </section>
 
         <p className="pb-6 text-center text-xs text-on-surface-variant">
-          Link ini bersifat pribadi — jangan disebarkan. Hubungi bendahara TPQ jika ada pertanyaan.
+          {login
+            ? "Data hanya untuk wali yang terdaftar. Hubungi bendahara TPQ jika ada pertanyaan."
+            : "Link ini bersifat pribadi — jangan disebarkan. Hubungi bendahara TPQ jika ada pertanyaan."}
         </p>
-      </div>
-    </main>
+    </section>
   );
 }

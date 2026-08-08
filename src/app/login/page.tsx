@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { getHomePath } from "@/actions/wali";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,10 +14,10 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Sesi masih valid? (mis. cookie basi/valid) — langsung ke beranda, jangan tampilkan form.
+  // Sesi masih valid? (mis. cookie basi/valid) — langsung ke beranda/portal, jangan tampilkan form.
   const { data: session, isPending } = authClient.useSession();
   if (!isPending && session?.user) {
-    router.push("/beranda");
+    getHomePath().then((p) => router.push(p));
     return null;
   }
 
@@ -30,7 +31,8 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-    router.push("/beranda");
+    const home = await getHomePath();
+    router.push(home);
     router.refresh();
   }
 
@@ -111,6 +113,8 @@ export default function LoginPage() {
 
           <p className="mt-6 text-center text-xs text-on-surface-variant">
             Akun demo: <span className="font-mono font-semibold text-primary">tpqdarulquran@gmail.com / admin123</span>
+            <br />
+            Portal wali: <span className="font-mono font-semibold text-primary">wali.demo@tpq.test / wali1234</span>
           </p>
         </div>
       </div>

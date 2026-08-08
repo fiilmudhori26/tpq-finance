@@ -4,7 +4,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { audit } from "@/lib/audit";
-import { pembayaranSppSchema, type PembayaranSppInput } from "@/lib/validations";
+import { pembayaranSppSchema, editPembayaranSppSchema, type PembayaranSppInput, type EditPembayaranSppInput } from "@/lib/validations";
 
 export type ActionState<T = unknown> = {
   success: boolean;
@@ -153,6 +153,75 @@ export async function catatPembayaranSpp(input: PembayaranSppInput): Promise<Act
   } catch (error: unknown) {
     const errMessage = error instanceof Error ? error.message : "Gagal mencatat pembayaran SPP";
     console.error("Gagal catat SPP:", error);
+    return { success: false, message: errMessage };
+  }
+}
+
+export async function editPembayaranSpp(input: EditPembayaranSppInput): Promise<ActionState> {
+  const session = await requireRole("SUPER_ADMIN", "BENDAHARA");
+  const tenantId = session.user.tenantId;
+
+  const parsed = editPembayaranSppSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: "Validasi gagal",
+      errors: parsed.error.flatten().fieldErrors,
+    };
+  }
+
+  const { id, nominal, metode, status } = parsed.data;
+
+  try {
+    await db.$transaction(async (tx) => {
+      const p = await tx.pembayaran.findFirst({
+        where: { id, tenantId, deletedAt: null },
+      });
+      if (!p) throw new Error("Pembayaran tidak ditemukan.");
+
+      const updated = await tx.pembayaran.update({
+        where: { id },
+        data: { nominal, metode, status },
+      });
+
+      // Sinkronkan transaksi kas agar nominal & status selaras
+      await tx.transaksi.update({
+        where: { id: p.transaksiId },
+        data: {
+          jumlah: nominal,
+          status: status === "LUNAS" ? "LUNAS" : "DIBATALKAN",
+        },
+      });
+
+      await audit(tx, {
+        tenantId,
+        userId: session.user.id,
+        aksi: "UPDATE",
+        entitas: "Pembayaran",
+        entitasId: updated.id,
+        detail: {
+          santriId: p.santriId,
+          noReferensi: updated.noReferensi,
+          status,
+          nominal,
+          metode,
+        },
+      });
+    });
+
+    revalidateTag("dashboard");
+    revalidatePath("/beranda");
+    revalidatePath("/pembayaran-spp");
+    revalidatePath("/pemasukan");
+    revalidatePath("/laporan");
+
+    return {
+      success: true,
+      message: status === "DIBATALKAN" ? "Pembayaran dibatalkan." : "Pembayaran berhasil diperbarui.",
+    };
+  } catch (error: unknown) {
+    const errMessage = error instanceof Error ? error.message : "Gagal memperbarui pembayaran";
+    console.error("Gagal edit SPP:", error);
     return { success: false, message: errMessage };
   }
 }

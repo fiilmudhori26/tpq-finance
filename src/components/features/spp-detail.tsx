@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2, AlertCircle, Clock, ChevronLeft, Printer } from "lucide-react";
+import { CheckCircle2, AlertCircle, Clock, ChevronLeft, Printer, Pencil } from "lucide-react";
 import { formatRupiah } from "@/lib/format";
 import type { SantriDetail } from "@/lib/data";
 import ModalBayar from "./modal-bayar";
+import ModalEditSpp from "./modal-edit-spp";
 
 const BULAN_2024 = [
   "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
@@ -16,8 +17,15 @@ function bulanKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 }
 
+const STATUS_TONE: Record<string, string> = {
+  LUNAS: "bg-green-100 text-green-700",
+  DIBATALKAN: "bg-red-100 text-red-700",
+};
+
 export default function SppDetail({ data }: { data: SantriDetail }) {
   const [open, setOpen] = useState(false);
+  const [edit, setEdit] = useState(false);
+  const [editItem, setEditItem] = useState<SantriDetail["riwayat"][number] | null>(null);
 
   const totalTunggakan = data.tunggakanBulan * data.sppBulanan;
 
@@ -79,7 +87,7 @@ export default function SppDetail({ data }: { data: SantriDetail }) {
                 </div>
               </div>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
               <div className="rounded-2xl bg-surface-container-low p-4 text-center">
                 <p className="text-2xl font-bold text-primary">{data.lunasBulan} Bulan</p>
                 <p className="mt-1 text-xs uppercase tracking-wider text-on-surface-variant">
@@ -179,12 +187,13 @@ export default function SppDetail({ data }: { data: SantriDetail }) {
                     <th className="px-4 py-3 font-medium">Bulan SPP</th>
                     <th className="px-4 py-3 text-right font-medium">Nominal</th>
                     <th className="px-4 py-3 text-center font-medium">Status</th>
+                    <th className="px-4 py-3 text-right font-medium">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant/20">
                   {riwayat.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-4 py-8 text-center text-sm text-on-surface-variant">
+                      <td colSpan={6} className="px-4 py-8 text-center text-sm text-on-surface-variant">
                         Belum ada riwayat pembayaran.
                       </td>
                     </tr>
@@ -206,17 +215,34 @@ export default function SppDetail({ data }: { data: SantriDetail }) {
                           {formatRupiah(b.nominal)}
                         </td>
                         <td className="px-4 py-4 text-center">
-                          <span className="inline-block rounded-full bg-primary/10 px-3 py-1 text-[11px] font-bold uppercase text-primary">
-                            Lunas
+                          <span className={`inline-block rounded-full px-3 py-1 text-[11px] font-bold uppercase ${STATUS_TONE[b.status]}`}>
+                            {b.status === "DIBATALKAN" ? "Dibatalkan" : "Lunas"}
                           </span>
                         </td>
-                        <td className="px-4 py-4 text-right">
-                          <Link
-                            href={`/pembayaran-spp/${data.id}/kwitansi?ref=${b.noReferensi}`}
-                            className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-                          >
-                            <Printer className="h-3.5 w-3.5" aria-hidden /> Kwitansi
-                          </Link>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditItem(b);
+                                setEdit(true);
+                              }}
+                              aria-label={`Edit pembayaran ${b.noReferensi}`}
+                              className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container hover:text-primary"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </button>
+                            {b.status === "LUNAS" && (
+                              <Link
+                                href={`/pembayaran-spp/${data.id}/kwitansi?ref=${b.noReferensi}`}
+                                aria-label={`Cetak kwitansi ${b.noReferensi}`}
+                                className="inline-flex items-center gap-1 rounded-lg p-2 text-sm font-semibold text-primary hover:bg-primary/5 hover:underline"
+                              >
+                                <Printer className="h-4 w-4" aria-hidden />
+                                <span className="hidden sm:inline">Kwitansi</span>
+                              </Link>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     );
@@ -233,6 +259,12 @@ export default function SppDetail({ data }: { data: SantriDetail }) {
         onClose={() => setOpen(false)}
         santri={{ id: data.id, nama: data.nama, sppBulanan: data.sppBulanan }}
         bulanBelum={bulanBelum}
+      />
+      <ModalEditSpp
+        open={edit}
+        onClose={() => setEdit(false)}
+        santriId={data.id}
+        item={editItem}
       />
     </div>
   );
