@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { getHomePath } from "@/actions/wali";
+import SubmitButton from "@/components/ui/submit-button";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -102,17 +103,16 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
+            <SubmitButton
+              pending={loading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-[0.99] disabled:opacity-60"
             >
               {loading ? "Memproses..." : "Masuk"}
-            </button>
+            </SubmitButton>
           </form>
 
           <p className="mt-6 text-center text-xs text-on-surface-variant">
-            Akun demo: <span className="font-mono font-semibold text-primary">admintpq@gmail.com / Admin123!</span>
+            Akun demo: <span className="font-mono font-semibold text-primary">admintpq@gmail.com / admin123</span>
             <br />
             Portal wali: <span className="font-mono font-semibold text-primary">walitpq@gmail.com / wali123</span>
           </p>

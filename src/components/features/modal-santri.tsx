@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { JENJANG } from "@/lib/mock-santri";
 import { tambahSantri, editSantri } from "@/actions/santri";
 import type { SantriRow } from "@/lib/data";
+import SubmitButton from "@/components/ui/submit-button";
 
 export default function ModalSantri({
   open,
@@ -171,13 +172,12 @@ export default function ModalSantri({
             >
               Batal
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-[2] rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:opacity-50"
+            <SubmitButton
+              pending={isPending}
+              className="flex flex-[2] items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Menyimpan..." : edit ? "Simpan Perubahan" : "Simpan Santri"}
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </div>

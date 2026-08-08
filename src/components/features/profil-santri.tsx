@@ -135,7 +135,7 @@ export default function ProfilSantri({ data }: { data: ProfilSantri }) {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() => (window.location.href = `/pembayaran-spp/${data.noInduk}`)}
+                onClick={() => (window.location.href = `/pembayaran-spp/${data.id}`)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-5 py-4 text-sm font-bold text-on-primary transition-opacity hover:opacity-90"
               >
                 <CreditCard className="h-4 w-4" aria-hidden />

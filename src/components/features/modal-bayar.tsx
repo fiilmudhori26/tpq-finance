@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { X, Wallet } from "lucide-react";
+import { X, Wallet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatRupiah } from "@/lib/format";
 import { catatPembayaranSpp } from "@/actions/pembayaran";
+import SubmitButton from "@/components/ui/submit-button";
 
 const BULAN_2024 = [
   "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
@@ -178,14 +179,21 @@ export default function ModalBayar({
             >
               Batal
             </button>
-            <button
-              type="submit"
-              disabled={selected.size === 0 || isPending}
+            <SubmitButton
+              pending={isPending}
+              disabled={selected.size === 0}
               className="flex flex-[2] items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Wallet className="h-4 w-4" aria-hidden />
-              {isPending ? "Memproses..." : `Bayar ${formatRupiah(total)}`}
-            </button>
+              {isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> Memproses...
+                </>
+              ) : (
+                <>
+                  <Wallet className="h-4 w-4" aria-hidden /> Bayar {formatRupiah(total)}
+                </>
+              )}
+            </SubmitButton>
           </div>
         </form>
       </div>

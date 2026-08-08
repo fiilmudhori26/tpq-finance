@@ -339,11 +339,11 @@ export interface SantriDetail {
   }[];
 }
 
-// Detail SPP per santri (di-cache per noInduk)
-export const getSantriDetail = cache(async (noInduk: string) => {
+// Detail SPP per santri (di-cache per id santri)
+export const getSantriDetail = cache(async (id: string) => {
   const tenantId = await getTenantId();
   const s = await db.santri.findFirst({
-    where: { tenantId, noInduk, deletedAt: null },
+    where: { tenantId, id, deletedAt: null },
     include: {
       pembayarans: { where: { deletedAt: null }, orderBy: { bulan: "asc" } },
     },

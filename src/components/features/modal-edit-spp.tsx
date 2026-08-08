@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { formatRupiah } from "@/lib/format";
 import { editPembayaranSpp } from "@/actions/pembayaran";
 import type { SantriDetail } from "@/lib/data";
+import SubmitButton from "@/components/ui/submit-button";
 
 export default function ModalEditSpp({
   open,
@@ -154,13 +155,12 @@ export default function ModalEditSpp({
             >
               Batal
             </button>
-            <button
-              type="submit"
-              disabled={isPending}
+            <SubmitButton
+              pending={isPending}
               className="flex flex-[2] items-center justify-center gap-2 rounded-lg bg-primary py-3 text-sm font-bold text-on-primary transition-opacity hover:opacity-90 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isPending ? "Menyimpan..." : "Simpan"}
-            </button>
+            </SubmitButton>
           </div>
         </form>
       </div>
