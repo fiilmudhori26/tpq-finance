@@ -112,9 +112,9 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs text-on-surface-variant">
-            Akun demo: <span className="font-mono font-semibold text-primary">admintpq@gmail.com / admin123</span>
+            Akun demo: <span className="font-mono font-semibold text-primary">admintpq@gmail.com / Admin123!</span>
             <br />
-            Portal wali: <span className="font-mono font-semibold text-primary">wali.demo@tpq.test / wali1234</span>
+            Portal wali: <span className="font-mono font-semibold text-primary">walitpq@gmail.com / wali123</span>
           </p>
         </div>
       </div>

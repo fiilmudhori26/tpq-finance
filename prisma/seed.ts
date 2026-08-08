@@ -266,8 +266,8 @@ async function main() {
   }
 
   // 7. Akun wali demo (login email+password)
-  const waliEmail = "wali.demo@tpq.test";
-  const waliPasswordHash = await hashPassword("wali1234");
+  const waliEmail = "walitpq@gmail.com";
+  const waliPasswordHash = await hashPassword("wali123");
   const firstSantri = await prisma.santri.findFirstOrThrow({
     where: { tenantId: tenant.id },
     orderBy: { createdAt: "asc" },
