@@ -52,7 +52,7 @@ export default async function KwitansiPage({
     <div className="mx-auto max-w-2xl bg-white p-10 text-black">
       <div className="flex items-start justify-between border-b-2 border-black pb-6">
         <div>
-          <h1 className="text-2xl font-bold">TPQ AL-IKHLAS</h1>
+          <h1 className="text-2xl font-bold">TPQ DARUL QUR&apos;AN</h1>
           <p className="mt-1 text-sm text-gray-600">{pembayaran.tenant.nama} — Kwitansi Pembayaran SPP</p>
         </div>
         <div className="text-right text-sm">

@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import { getDashboardData } from "@/lib/data";
-import { getSession } from "@/lib/session";
 import StatCard from "@/components/features/stat-card";
 import FinanceBarChart from "@/components/features/finance-bar-chart";
 import ArrearsList from "@/components/features/arrears-list";
@@ -8,9 +7,8 @@ import TransaksiTerbaru from "@/components/features/transaksi-terbaru";
 import ModalTransaksi from "@/components/features/modal-transaksi";
 
 export default async function BerandaPage() {
-  const [dashData, session] = await Promise.all([getDashboardData(), getSession()]);
+  const [dashData] = await Promise.all([getDashboardData()]);
   const { kpi, trend, tunggakan, transaksiTerbaru } = dashData;
-  const namaUser = session?.user.name ?? "Bendahara";
 
   const bulanLabel = new Date().toLocaleString("id-ID", { month: "long", year: "numeric" });
 
@@ -18,7 +16,7 @@ export default async function BerandaPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-[32px] font-bold leading-10 text-primary md:text-5xl md:leading-[56px]">
-          Assalamu&apos;alaikum, {namaUser}!
+          Assalamu&apos;alaikum, asatidz/asatidzah!
         </h1>
         <p className="mt-2 text-lg text-on-surface-variant">
           Ringkasan keuangan TPQ — {bulanLabel}.
@@ -50,7 +48,7 @@ export default async function BerandaPage() {
       <TransaksiTerbaru items={transaksiTerbaru} />
 
       <footer className="pt-4 text-center text-sm text-on-surface-variant/40">
-        © {new Date().getFullYear()} TPQ Finance · Sistem Keuangan Amanah untuk Lembaga Islami
+        © {new Date().getFullYear()} TPQ Darul Qur&apos;an · Sistem Keuangan Amanah untuk Lembaga Islami
       </footer>
 
       <Suspense>

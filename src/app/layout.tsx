@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TPQ Finance",
+  title: "TPQ Darul Qur'an — Sistem Keuangan TPQ",
   description: "Sistem Keuangan Amanah untuk Lembaga Islami",
 };
 

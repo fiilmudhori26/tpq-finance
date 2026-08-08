@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BookOpen, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 
 export default function LoginPage() {
@@ -32,12 +32,13 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="rounded-3xl border border-outline-variant/30 bg-surface-container-lowest p-8 shadow-lift md:p-10">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-on-primary shadow-soft">
-              <BookOpen className="h-8 w-8" aria-hidden />
-            </div>
-            <h1 className="mt-5 text-2xl font-bold text-on-surface">TPQ Finance</h1>
+            <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-primary text-on-primary shadow-soft">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-tpq.jpg" alt="Logo TPQ Darul Qur'an" className="h-full w-full object-cover" />
+          </div>
+            <h1 className="mt-5 text-2xl font-bold text-on-surface">TPQ Darul Qur&apos;an</h1>
             <p className="mt-1 text-sm text-on-surface-variant">
-              Kelola keuangan TPQ Al-Ikhlas
+              Kelola keuangan TPQ Darul Qur&apos;an
             </p>
           </div>
 

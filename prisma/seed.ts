@@ -32,11 +32,11 @@ async function main() {
   await prisma.pengaturan.deleteMany({});
 
   const tenant = await prisma.tenant.upsert({
-    where: { slug: "tpq-al-ikhlas" },
-    update: {},
+    where: { slug: "tpq-darul-quran" },
+    update: { nama: "TPQ Darul Qur'an", alamat: "Jember, Jawa Timur" },
     create: {
-      slug: "tpq-al-ikhlas",
-      nama: "TPQ Al-Ikhlas",
+      slug: "tpq-darul-quran",
+      nama: "TPQ Darul Qur'an",
       alamat: "Jember, Jawa Timur",
     },
   });

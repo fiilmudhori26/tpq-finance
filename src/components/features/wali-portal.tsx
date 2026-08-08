@@ -46,7 +46,7 @@ export default function WaliPortal({
             <GraduationCap className="h-7 w-7" aria-hidden />
           </div>
           <h1 className="mt-4 text-2xl font-bold text-on-surface">Portal Wali Santri</h1>
-          <p className="mt-1 text-sm text-on-surface-variant">TPQ Al-Ikhlas — informasi SPP anak</p>
+          <p className="mt-1 text-sm text-on-surface-variant">TPQ Darul Qur&apos;an — informasi SPP anak</p>
         </header>
 
         <section className="rounded-2xl bg-surface-container-lowest p-6 shadow-soft">

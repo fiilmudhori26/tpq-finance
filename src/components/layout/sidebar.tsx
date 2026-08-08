@@ -11,7 +11,6 @@ import {
   ReceiptText,
   BarChart3,
   Settings,
-  Landmark,
   LogOut,
 } from "lucide-react";
 
@@ -57,11 +56,12 @@ export default function Sidebar({ open, onClose }: SidebarProps) {
   const content = (
     <>
       <div className="flex items-center gap-3 px-2 pt-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-container text-white">
-          <Landmark className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-primary-container">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-tpq.jpg" alt="Logo" className="h-full w-full object-cover" />
         </div>
         <div>
-          <p className="text-base font-bold text-primary">TPQ Finance</p>
+          <p className="text-base font-bold text-primary">TPQ Darul Qur&apos;an</p>
           <p className="text-[10px] uppercase tracking-wider text-on-surface-variant">
             Bendahara TPQ
           </p>

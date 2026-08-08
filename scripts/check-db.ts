@@ -63,8 +63,8 @@ const db = prisma.$extends({
 });
 
 async function main() {
-  const tenant = await db.tenant.findFirst({ where: { slug: "tpq-al-ikhlas" } });
-  assert(tenant, "tenant tpq-al-ikhlas tidak ada (jalankan seed dulu)");
+  const tenant = await db.tenant.findFirst({ where: { slug: "tpq-darul-quran" } });
+  assert(tenant, "tenant tpq-darul-quran tidak ada (jalankan seed dulu)");
 
   const uid = `check-${Date.now()}`;
   const santri = await db.santri.create({

@@ -44,7 +44,7 @@ export default function SppDetail({ data }: { data: SantriDetail }) {
           </Link>
           <h1 className="text-2xl font-semibold text-on-surface">Pembayaran SPP</h1>
           <p className="mt-1 text-sm text-on-surface-variant">
-            Manajemen iuran bulanan santri TPQ Al-Ikhlas
+            Manajemen iuran bulanan santri TPQ Darul Qur&apos;an
           </p>
         </div>
         <button
