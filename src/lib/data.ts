@@ -419,22 +419,41 @@ export const getDashboardData = cache(async () => {
     { label: "Total Santri Aktif", nilai: totalSantriAktif.toLocaleString("id-ID"), sub: "Santri", icon: "users", iconBg: "bg-tertiary/10", iconColor: "text-tertiary" },
   ];
 
-  // Trend 6 bulan
-  const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+  // Trend 6 bulan — 1 query grouped, bukan 12 aggregate paralel
   const trend: TrendBulan[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const [pemasukanAgg, pengeluaranAgg] = await Promise.all([
-      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PEMASUKAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
-      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PENGELUARAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
-    ]);
-    trend.push({
-      bulan: labels[d.getMonth()],
-      pemasukan: Math.round(Number(pemasukanAgg._sum.jumlah ?? 0) / 1_000_000 * 10) / 10,
-      pengeluaran: Math.round(Number(pengeluaranAgg._sum.jumlah ?? 0) / 1_000_000 * 10) / 10,
-      aktif: i === 0,
+  {
+    const sejak = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const trendRaw = await db.transaksi.groupBy({
+      by: ["jenis", "tanggal"],
+      _sum: { jumlah: true },
+      where: {
+        tenantId,
+        deletedAt: null,
+        tanggal: { gte: sejak, lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+      },
     });
+    const pemasukanByBulan = new Map<number, number>();
+    const pengeluaranByBulan = new Map<number, number>();
+    for (const r of trendRaw) {
+      const kunci = r.tanggal.getFullYear() * 12 + r.tanggal.getMonth();
+      const jumlah = Number(r._sum.jumlah ?? 0);
+      if (r.jenis === "PEMASUKAN") {
+        pemasukanByBulan.set(kunci, (pemasukanByBulan.get(kunci) ?? 0) + jumlah);
+      } else {
+        pengeluaranByBulan.set(kunci, (pengeluaranByBulan.get(kunci) ?? 0) + jumlah);
+      }
+    }
+    const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const kunci = d.getFullYear() * 12 + d.getMonth();
+      trend.push({
+        bulan: labels[d.getMonth()],
+        pemasukan: Math.round(((pemasukanByBulan.get(kunci) ?? 0) / 1_000_000) * 10) / 10,
+        pengeluaran: Math.round(((pengeluaranByBulan.get(kunci) ?? 0) / 1_000_000) * 10) / 10,
+        aktif: i === 0,
+      });
+    }
   }
 
   // Tunggakan
@@ -498,36 +517,63 @@ export const getLaporanData = cache(async () => {
   const totalKeluar = Number(pengeluaranAgg._sum.jumlah ?? 0);
   const saldo = totalMasuk - totalKeluar;
 
-  // Trend 6 bulan (sama dengan beranda)
+  // Trend 6 bulan — 1 query grouped (bukan 12 aggregate)
   const now = new Date();
-  const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
   const trend: TrendBulan[] = [];
-  for (let i = 5; i >= 0; i--) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const next = new Date(now.getFullYear(), now.getMonth() - i + 1, 1);
-    const [pm, pk] = await Promise.all([
-      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PEMASUKAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
-      db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PENGELUARAN", tanggal: { gte: d, lt: next }, deletedAt: null } }),
-    ]);
-    trend.push({
-      bulan: labels[d.getMonth()],
-      pemasukan: Math.round((Number(pm._sum.jumlah ?? 0) / 1_000_000) * 10) / 10,
-      pengeluaran: Math.round((Number(pk._sum.jumlah ?? 0) / 1_000_000) * 10) / 10,
-      aktif: i === 0,
+  {
+    const sejak = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+    const trendRaw = await db.transaksi.groupBy({
+      by: ["jenis", "tanggal"],
+      _sum: { jumlah: true },
+      where: {
+        tenantId,
+        deletedAt: null,
+        tanggal: { gte: sejak, lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
+      },
     });
+    const pemasukanByBulan = new Map<number, number>();
+    const pengeluaranByBulan = new Map<number, number>();
+    for (const r of trendRaw) {
+      const kunci = r.tanggal.getFullYear() * 12 + r.tanggal.getMonth();
+      const jumlah = Number(r._sum.jumlah ?? 0);
+      if (r.jenis === "PEMASUKAN") {
+        pemasukanByBulan.set(kunci, (pemasukanByBulan.get(kunci) ?? 0) + jumlah);
+      } else {
+        pengeluaranByBulan.set(kunci, (pengeluaranByBulan.get(kunci) ?? 0) + jumlah);
+      }
+    }
+    const labels = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const kunci = d.getFullYear() * 12 + d.getMonth();
+      trend.push({
+        bulan: labels[d.getMonth()],
+        pemasukan: Math.round(((pemasukanByBulan.get(kunci) ?? 0) / 1_000_000) * 10) / 10,
+        pengeluaran: Math.round(((pengeluaranByBulan.get(kunci) ?? 0) / 1_000_000) * 10) / 10,
+        aktif: i === 0,
+      });
+    }
   }
 
-  // Rekap per kategori
-  const transaksiAll = await db.transaksi.findMany({
+  // Rekap per kategori — 1 query groupBy, bukan fetch semua transaksi + reduce JS
+  const rekapRaw = await db.transaksi.groupBy({
+    by: ["kategoriId", "jenis"],
+    _sum: { jumlah: true },
     where: { tenantId, deletedAt: null },
-    include: { kategori: true },
   });
-  const perKategori = transaksiAll.reduce<Record<string, { kategori: string; jumlah: number; jenis: string }>>((acc, t) => {
-    acc[t.kategori.nama] = acc[t.kategori.nama] ?? { kategori: t.kategori.nama, jumlah: 0, jenis: t.jenis };
-    acc[t.kategori.nama].jumlah += Number(t.jumlah);
-    return acc;
-  }, {});
-  const rekap = Object.values(perKategori).sort((a, b) => b.jumlah - a.jumlah);
+  const katIds = [...new Set(rekapRaw.map((r) => r.kategoriId))];
+  const kats = await db.kategori.findMany({
+    where: { id: { in: katIds } },
+    select: { id: true, nama: true },
+  });
+  const namaKat = new Map(kats.map((k) => [k.id, k.nama]));
+  const rekap = rekapRaw
+    .map((r) => ({
+      kategori: namaKat.get(r.kategoriId) ?? "Lain-lain",
+      jumlah: Number(r._sum.jumlah ?? 0),
+      jenis: r.jenis,
+    }))
+    .sort((a, b) => b.jumlah - a.jumlah);
 
   // Status SPP
   const bulanIni = new Date();

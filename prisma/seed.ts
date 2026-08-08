@@ -21,16 +21,79 @@ function poolFromUrl() {
 const adapter = new PrismaPg(poolFromUrl());
 const prisma = new PrismaClient({ adapter });
 
+type BulanSeed = "Jan" | "Feb" | "Mar" | "Apr" | "Mei";
+
+// Santri + bulan SPP yang lunas (tahun ajaran 2025/2026). Semua tanpa wali/HP.
+const SANTRI: { nama: string; bulan: BulanSeed[] }[] = [
+  { nama: "Azam", bulan: ["Mei"] },
+  { nama: "Alek", bulan: ["Mei"] },
+  { nama: "Arul", bulan: ["Mei"] },
+  { nama: "Aira", bulan: ["Mei"] },
+  { nama: "Alesa", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Afka", bulan: ["Mar"] },
+  { nama: "Abe", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Adam", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Attar", bulan: ["Mei"] },
+  { nama: "Aisyah", bulan: ["Apr", "Mei"] },
+  { nama: "Agil", bulan: ["Jan", "Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Tama", bulan: ["Jan", "Feb", "Mar", "Apr"] },
+  { nama: "Agha", bulan: ["Apr", "Mei"] },
+  { nama: "Alif", bulan: ["Mei"] },
+  { nama: "Basyar", bulan: ["Mei"] },
+  { nama: "Balqis", bulan: ["Apr", "Mei"] },
+  { nama: "Dasel", bulan: ["Mei"] },
+  { nama: "Delon", bulan: ["Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Dika", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Egar", bulan: ["Jan", "Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Fanya", bulan: ["Mei"] },
+  { nama: "Fahru", bulan: ["Mei"] },
+  { nama: "Fahar", bulan: ["Apr", "Mei"] },
+  { nama: "Fatih", bulan: ["Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Farhan", bulan: ["Apr", "Mei"] },
+  { nama: "Gilang", bulan: ["Mei"] },
+  { nama: "Ila", bulan: ["Mei"] },
+  { nama: "Iqbal", bulan: ["Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Izzan", bulan: ["Mei"] },
+  { nama: "Kevin", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Khimora", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Keana", bulan: ["Mei"] },
+  { nama: "Myesel", bulan: ["Feb", "Mar", "Apr"] },
+  { nama: "Cello", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "MD", bulan: ["Jan", "Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Muzammil", bulan: ["Apr", "Mei"] },
+  { nama: "Naya", bulan: ["Mei"] },
+  { nama: "Nares", bulan: ["Mei"] },
+  { nama: "Putri 1", bulan: ["Mei"] },
+  { nama: "Rajoo", bulan: ["Mei"] },
+  { nama: "Rizal", bulan: ["Apr", "Mei"] },
+  { nama: "Tazakka", bulan: ["Jan", "Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Revalita", bulan: ["Mei"] },
+  { nama: "Reinata", bulan: ["Mei"] },
+  { nama: "Gani", bulan: ["Feb", "Mar", "Apr", "Mei"] },
+  { nama: "Rafa", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Arya", bulan: ["Apr", "Mei"] },
+  { nama: "Jenita", bulan: ["Mar", "Apr", "Mei"] },
+  { nama: "Aluna", bulan: ["Mei"] },
+  { nama: "Senja", bulan: ["Apr", "Mei"] },
+  { nama: "Bunga", bulan: ["Mei"] },
+  { nama: "Arsene", bulan: ["Feb", "Mar", "Apr", "Mei"] },
+];
+
+const TAHUN_AJAR = "2025/2026";
+const TAHUN = 2026; // Jan–Mei 2026
+
 async function main() {
-  // Idempotent: hapus data lama tenant sebelum seed ulang (anak → induk)
+  // 1. Reset semua data lama (anak → induk), kecuali User/Tenant
   await prisma.auditLog.deleteMany({});
   await prisma.pembayaran.deleteMany({});
   await prisma.transaksi.deleteMany({});
+  await prisma.waliToken.deleteMany({});
   await prisma.santri.deleteMany({});
   await prisma.sppRate.deleteMany({});
   await prisma.kategori.deleteMany({});
   await prisma.pengaturan.deleteMany({});
 
+  // 2. Tenant "TPQ Darul Qur'an"
   const tenant = await prisma.tenant.upsert({
     where: { slug: "tpq-darul-quran" },
     update: { nama: "TPQ Darul Qur'an", alamat: "Jember, Jawa Timur" },
@@ -41,11 +104,10 @@ async function main() {
     },
   });
 
+  // 3. User admin
   const email = process.env.SEED_ADMIN_EMAIL ?? "admin@tpq.local";
   const password = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!";
   const passwordHash = await hashPassword(password);
-
-  // User dibuat manual + hash ada di Account.password (konvensi Better Auth).
   const user = await prisma.user.upsert({
     where: { email },
     update: { name: "Super Admin" },
@@ -76,6 +138,7 @@ async function main() {
     });
   }
 
+  // 4. Kategori default
   const kategori = [
     { nama: "SPP Santri", jenis: "PEMASUKAN" as const },
     { nama: "Donasi", jenis: "PEMASUKAN" as const },
@@ -89,17 +152,14 @@ async function main() {
   for (const k of kategori) {
     await prisma.kategori.upsert({
       where: {
-        tenantId_jenis_nama: {
-          tenantId: tenant.id,
-          jenis: k.jenis,
-          nama: k.nama,
-        },
+        tenantId_jenis_nama: { tenantId: tenant.id, jenis: k.jenis, nama: k.nama },
       },
       update: {},
       create: { ...k, tenantId: tenant.id, isDefault: true },
     });
   }
 
+  // 5. SPP rate per jenjang (tahun ajaran baru)
   const rates: { jenjang: "TKA" | "TPA" | "TQA"; nominal: number }[] = [
     { jenjang: "TKA", nominal: 50_000 },
     { jenjang: "TPA", nominal: 75_000 },
@@ -111,147 +171,54 @@ async function main() {
         tenantId_jenjang_tahunAjaran: {
           tenantId: tenant.id,
           jenjang: r.jenjang,
-          tahunAjaran: "2024/2025",
+          tahunAjaran: TAHUN_AJAR,
         },
       },
       update: {},
-      create: { ...r, tenantId: tenant.id, tahunAjaran: "2024/2025" },
+      create: { ...r, tenantId: tenant.id, tahunAjaran: TAHUN_AJAR },
     });
   }
 
-  // --- Data dummy: santri ---
-  const santriSeed: {
-    nama: string;
-    jenjang: "TKA" | "TPA" | "TQA";
-    kelas: string;
-    namaWali: string;
-    noHpWali: string;
-  }[] = [
-    { nama: "Aisyah Putri", jenjang: "TPA", kelas: "Ba", namaWali: "Ibu Siti Rahma", noHpWali: "081234567801" },
-    { nama: "Muhammad Rizki", jenjang: "TQA", kelas: "Ta", namaWali: "Bapak Ahmad Fauzi", noHpWali: "081234567802" },
-    { nama: "Siti Nurhaliza", jenjang: "TKA", kelas: "Alif", namaWali: "Ibu Dewi Lestari", noHpWali: "081234567803" },
-    { nama: "Ahmad Fadlan", jenjang: "TPA", kelas: "Alif", namaWali: "Bapak Joko Santoso", noHpWali: "081234567804" },
-    { nama: "Nabila Zahra", jenjang: "TKA", kelas: "Ba", namaWali: "Ibu Ratna Sari", noHpWali: "081234567805" },
-    { nama: "Hasan Basri", jenjang: "TQA", kelas: "Ta", namaWali: "Bapak Umar Said", noHpWali: "081234567806" },
-    { nama: "Zainab Aulia", jenjang: "TPA", kelas: "Ba", namaWali: "Ibu Maimunah", noHpWali: "081234567807" },
-    { nama: "Abdullah Syafi", jenjang: "TPA", kelas: "Alif", namaWali: "Bapak Nur Kholis", noHpWali: "081234567808" },
-    { nama: "Khadijah Azzahra", jenjang: "TKA", kelas: "Alif", namaWali: "Ibu Halimah", noHpWali: "081234567809" },
-    { nama: "Umar Faruq", jenjang: "TQA", kelas: "Ta", namaWali: "Bapak Salim Akbar", noHpWali: "081234567810" },
-  ];
+  // 6. Santri baru (53) — tanpa wali/HP
+  const rateMap = new Map(rates.map((r) => [r.jenjang, r.nominal]));
+  const katSpp = (
+    await prisma.kategori.findUniqueOrThrow({
+      where: {
+        tenantId_jenis_nama: { tenantId: tenant.id, jenis: "PEMASUKAN", nama: "SPP Santri" },
+      },
+    })
+  ).id;
 
-  const santriList = [];
-  for (let i = 0; i < santriSeed.length; i++) {
-    const s = santriSeed[i];
-    const noInduk = `2024${String(i + 1).padStart(3, "0")}`;
-    const santri = await prisma.santri.upsert({
-      where: { tenantId_noInduk: { tenantId: tenant.id, noInduk } },
-      update: {},
-      create: { ...s, tenantId: tenant.id, noInduk },
-    });
-    santriList.push(santri);
-  }
+  const BULAN_INDEX: Record<BulanSeed, number> = { Jan: 0, Feb: 1, Mar: 2, Apr: 3, Mei: 4 };
+  const JENJANG: ("TKA" | "TPA" | "TQA")[] = ["TKA", "TPA", "TQA"];
 
-  // --- Data dummy: transaksi pemasukan/pengeluaran + pembayaran SPP (BR-03) ---
-  const katMap = new Map(
-    (await prisma.kategori.findMany({ where: { tenantId: tenant.id } })).map((k) => [`${k.jenis}:${k.nama}`, k])
-  );
-  const katSpp = katMap.get("PEMASUKAN:SPP Santri")!;
-  const katDonasi = katMap.get("PEMASUKAN:Donasi")!;
-  const katInfaq = katMap.get("PEMASUKAN:Infaq")!;
-  const katOperasional = katMap.get("PENGELUARAN:Operasional")!;
-  const katGaji = katMap.get("PENGELUARAN:Gaji/Honor")!;
-
-  const now = new Date();
-  const tahun = now.getFullYear();
-  const bulan = now.getMonth();
-  // Kemarin (WIB) — dijamin ≤ now walau jam berapapun, aman dari CHECK BR-12
-  const kemarin = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0, 0);
-  const tgl = (hari: number, bulanOffset = 0) =>
-    new Date(tahun, bulan + bulanOffset, hari, 10, 0, 0);
-
-  // Transaksi non-SPP (pemasukan & pengeluaran)
-  const transaksiUmum: {
-    jenis: "PEMASUKAN" | "PENGELUARAN";
-    kategori: typeof katDonasi;
-    sumber: string;
-    keterangan: string;
-    jumlah: number;
-    tanggal: Date;
-  }[] = [
-    { jenis: "PEMASUKAN", kategori: katDonasi, sumber: "Hamba Allah", keterangan: "Donasi pembangunan", jumlah: 250_000, tanggal: tgl(12, -1) },
-    { jenis: "PEMASUKAN", kategori: katInfaq, sumber: "Kotak Amal", keterangan: "Infaq Jumat", jumlah: 180_000, tanggal: tgl(9, -1) },
-    { jenis: "PENGELUARAN", kategori: katOperasional, sumber: "Operasional", keterangan: "Listrik dan air", jumlah: 350_000, tanggal: tgl(10, -1) },
-    { jenis: "PENGELUARAN", kategori: katOperasional, sumber: "Operasional", keterangan: "Buku dan alat tulis", jumlah: 120_000, tanggal: tgl(7, -1) },
-    { jenis: "PENGELUARAN", kategori: katGaji, sumber: "Gaji/Honor", keterangan: "Honor ustadz bulan lalu", jumlah: 1_200_000, tanggal: tgl(5, -1) },
-    { jenis: "PEMASUKAN", kategori: katDonasi, sumber: "Yayasan Nurul Huda", keterangan: "Bantuan operasional", jumlah: 500_000, tanggal: tgl(3, -1) },
-    // Bulan berjalan (dashboard "Bulan Ini" biar hidup) — tanggal ≤ hari ini (BR-12)
-    { jenis: "PEMASUKAN", kategori: katDonasi, sumber: "Hamba Allah", keterangan: "Donasi wakaf Al-Qur'an", jumlah: 300_000, tanggal: tgl(1) },
-    { jenis: "PEMASUKAN", kategori: katInfaq, sumber: "Kotak Amal", keterangan: "Infaq Jumat", jumlah: 210_000, tanggal: tgl(2) },
-    { jenis: "PENGELUARAN", kategori: katOperasional, sumber: "Operasional", keterangan: "Kebersihan dan ATK", jumlah: 95_000, tanggal: tgl(2) },
-  ];
-
-  for (const t of transaksiUmum) {
-    await prisma.transaksi.create({
+  let noUrut = 1;
+  let totalPembayaran = 0;
+  for (const s of SANTRI) {
+    const noInduk = `${TAHUN}${String(noUrut).padStart(3, "0")}`;
+    const jenjang = JENJANG[noUrut % 3]; // rotasi merata
+    const santri = await prisma.santri.create({
       data: {
         tenantId: tenant.id,
-        jenis: t.jenis,
-        kategoriId: t.kategori.id,
-        sumber: t.sumber,
-        keterangan: t.keterangan,
-        jumlah: t.jumlah,
-        tanggal: t.tanggal,
-        createdById: user.id,
+        noInduk,
+        nama: s.nama,
+        jenjang,
+        kelas: jenjang === "TKA" ? "Alif" : jenjang === "TPA" ? "Ba" : "Ta",
       },
     });
-  }
-
-  // Pembayaran SPP (BR-03): 1 pembayaran = 1 transaksi pemasukan otomatis
-  const bulanIni = new Date(tahun, bulan, 1);
-  const bulanLalu = new Date(tahun, bulan - 1, 1);
-  const rateMap = new Map(
-    (await prisma.sppRate.findMany({ where: { tenantId: tenant.id } })).map((r) => [r.jenjang, Number(r.nominal)])
-  );
-  let idx = 0;
-  for (let i = 0; i < santriList.length; i++) {
-    const santri = santriList[i];
-    const nominal = rateMap.get(santri.jenjang) ?? 75_000;
-    // 7 dari 10 santri bayar bulan lalu (3 tunggakan)
-    if (i >= 7) continue;
-    const transaksiSpp = await prisma.transaksi.create({
-      data: {
-        tenantId: tenant.id,
-        jenis: "PEMASUKAN",
-        kategoriId: katSpp.id,
-        sumber: santri.nama,
-        keterangan: `SPP ${santri.nama} ${bulanLalu.toLocaleString("id-ID", { month: "long", year: "numeric" })}`,
-        jumlah: nominal,
-        tanggal: tgl(1 + idx, -1),
-        createdById: user.id,
-      },
-    });
-    await prisma.pembayaran.create({
-      data: {
-        tenantId: tenant.id,
-        santriId: santri.id,
-        transaksiId: transaksiSpp.id,
-        noReferensi: `#TRX-${String(100 + idx)}-B`,
-        bulan: bulanLalu,
-        nominal,
-        paidAt: tgl(1 + idx, -1),
-        createdById: user.id,
-      },
-    });
-    // 4 dari 7 yang bayar, juga bayar bulan ini (biar ada status Lunas)
-    if (i < 4) {
-      const transaksiIni = await prisma.transaksi.create({
+    // Pembayaran SPP per bulan lunas
+    const nominal = rateMap.get(jenjang)!;
+    for (const b of s.bulan) {
+      const tanggal = new Date(TAHUN, BULAN_INDEX[b], 5, 10, 0, 0);
+      const transaksi = await prisma.transaksi.create({
         data: {
           tenantId: tenant.id,
           jenis: "PEMASUKAN",
-          kategoriId: katSpp.id,
-          sumber: santri.nama,
-          keterangan: `SPP ${santri.nama} ${bulanIni.toLocaleString("id-ID", { month: "long", year: "numeric" })}`,
+          kategoriId: katSpp,
+          sumber: s.nama,
+          keterangan: `SPP ${s.nama} ${tanggal.toLocaleString("id-ID", { month: "long", year: "numeric" })}`,
           jumlah: nominal,
-          tanggal: kemarin,
+          tanggal,
           createdById: user.id,
         },
       });
@@ -259,20 +226,21 @@ async function main() {
         data: {
           tenantId: tenant.id,
           santriId: santri.id,
-          transaksiId: transaksiIni.id,
-          noReferensi: `#TRX-${String(200 + i)}-B`,
-          bulan: bulanIni,
+          transaksiId: transaksi.id,
+          noReferensi: `#TRX-${String(1000 + totalPembayaran)}-B`,
+          bulan: new Date(TAHUN, BULAN_INDEX[b], 1),
           nominal,
-          paidAt: kemarin,
+          paidAt: tanggal,
           createdById: user.id,
         },
       });
+      totalPembayaran++;
     }
-    idx++;
+    noUrut++;
   }
 
   console.log(
-    `Seed OK: tenant=${tenant.slug}, kategori=${kategori.length}, sppRate=3, santri=${santriList.length}, transaksi=${transaksiUmum.length + 7}, pembayaran=7`
+    `Seed OK: tenant=${tenant.slug}, santri=${SANTRI.length}, pembayaran=${totalPembayaran}, tahunAjaran=${TAHUN_AJAR}`
   );
 }
 
