@@ -83,15 +83,41 @@ const TAHUN_AJAR = "2025/2026";
 const TAHUN = 2026; // Jan–Mei 2026
 
 async function main() {
-  // 1. Reset semua data lama (anak → induk), kecuali User/Tenant
-  await prisma.auditLog.deleteMany({});
-  await prisma.pembayaran.deleteMany({});
-  await prisma.transaksi.deleteMany({});
-  await prisma.waliToken.deleteMany({});
-  await prisma.santri.deleteMany({});
-  await prisma.sppRate.deleteMany({});
-  await prisma.kategori.deleteMany({});
-  await prisma.pengaturan.deleteMany({});
+  // 1. Reset tenant aktif (Darul Qur'an) dulu. Wajib sebelum Al-Ikhlas: transaksi lama
+  //    tenant ini dibuat oleh user tenant Al-Ikhlas (data inkonsisten seed lama), sehingga
+  //    kalau Al-Ikhlas dihapus duluan, FK createdById → User Al-Ikhlas masih dirujuk.
+  const newTenant = await prisma.tenant.findUnique({ where: { slug: "tpq-darul-quran" } });
+  if (newTenant) {
+    const tid = newTenant.id;
+    await prisma.waliToken.deleteMany({ where: { tenantId: tid } });
+    await prisma.auditLog.deleteMany({ where: { tenantId: tid } });
+    await prisma.pembayaran.deleteMany({ where: { tenantId: tid } });
+    await prisma.transaksi.deleteMany({ where: { tenantId: tid } });
+    await prisma.santri.deleteMany({ where: { tenantId: tid } });
+    await prisma.sppRate.deleteMany({ where: { tenantId: tid } });
+    await prisma.kategori.deleteMany({ where: { tenantId: tid } });
+    await prisma.pengaturan.deleteMany({ where: { tenantId: tid } });
+    await prisma.user.deleteMany({ where: { tenantId: tid } });
+    await prisma.tenant.delete({ where: { id: tid } });
+  }
+
+  // 2. Hapus tenant lama (Al-Ikhlas) beserta semua datanya — clean slate.
+  //    Pakai tenantId langsung (filter relasi tak aman utk deleteMany).
+  const oldTenant = await prisma.tenant.findUnique({ where: { slug: "tpq-al-ikhlas" } });
+  if (oldTenant) {
+    const tid = oldTenant.id;
+    await prisma.waliToken.deleteMany({ where: { tenantId: tid } });
+    await prisma.auditLog.deleteMany({ where: { tenantId: tid } });
+    // Transaksi harus dihapus dulu (FK createdById → User)
+    await prisma.transaksi.deleteMany({ where: { tenantId: tid } });
+    await prisma.pembayaran.deleteMany({ where: { tenantId: tid } });
+    await prisma.santri.deleteMany({ where: { tenantId: tid } });
+    await prisma.sppRate.deleteMany({ where: { tenantId: tid } });
+    await prisma.kategori.deleteMany({ where: { tenantId: tid } });
+    await prisma.pengaturan.deleteMany({ where: { tenantId: tid } });
+    await prisma.user.deleteMany({ where: { tenantId: tid } });
+    await prisma.tenant.delete({ where: { id: tid } });
+  }
 
   // 2. Tenant "TPQ Darul Qur'an"
   const tenant = await prisma.tenant.upsert({
@@ -105,8 +131,8 @@ async function main() {
   });
 
   // 3. User admin
-  const email = process.env.SEED_ADMIN_EMAIL ?? "admin@tpq.local";
-  const password = process.env.SEED_ADMIN_PASSWORD ?? "Admin123!";
+  const email = process.env.SEED_ADMIN_EMAIL ?? "tpqdarulquran@gmail.com";
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "admin123";
   const passwordHash = await hashPassword(password);
   const user = await prisma.user.upsert({
     where: { email },

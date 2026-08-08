@@ -70,7 +70,7 @@ export default function LoginPage() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@tpq.local"
+                  placeholder="tpqdarulquran@gmail.com"
                   className="w-full rounded-xl border border-outline-variant bg-surface-bright py-3 pl-11 pr-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
                 />
               </div>
@@ -110,7 +110,7 @@ export default function LoginPage() {
           </form>
 
           <p className="mt-6 text-center text-xs text-on-surface-variant">
-            Akun demo: <span className="font-mono font-semibold text-primary">admin@tpq.local / Admin123!</span>
+            Akun demo: <span className="font-mono font-semibold text-primary">tpqdarulquran@gmail.com / admin123</span>
           </p>
         </div>
       </div>
