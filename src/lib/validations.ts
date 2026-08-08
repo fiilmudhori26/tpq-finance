@@ -26,6 +26,12 @@ export const transaksiSchema = z.object({
   buktiUrl: z.string().optional().nullable(),
 });
 
+export const renameKelasSchema = z.object({
+  jenjang: z.enum(["TKA", "TPA", "TQA"]),
+  kelasLama: z.string().min(1, "Kelas lama wajib diisi"),
+  kelasBaru: z.string().trim().min(1, "Nama kelas baru wajib diisi"),
+});
+
 export const pembayaranSppSchema = z.object({
   santriId: z.string().min(1, "Santri wajib dipilih"),
   bulan: z.array(z.coerce.date()).min(1, "Pilih minimal 1 bulan"),
@@ -36,5 +42,6 @@ export const pembayaranSppSchema = z.object({
 
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SantriInput = z.infer<typeof santriSchema>;
+export type RenameKelasInput = z.infer<typeof renameKelasSchema>;
 export type TransaksiInput = z.infer<typeof transaksiSchema>;
 export type PembayaranSppInput = z.infer<typeof pembayaranSppSchema>;

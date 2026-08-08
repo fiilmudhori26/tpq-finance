@@ -1,16 +1,24 @@
 import { Filter } from "lucide-react";
 
+export type OpsiKelas = { jenjang: string; kelas: string };
+
 export default function FilterCard({
   jenjang,
   kelas,
   status,
+  daftarKelas,
   onApply,
 }: {
   jenjang: string;
   kelas: string;
   status: string;
+  daftarKelas: OpsiKelas[];
   onApply: (f: { jenjang: string; kelas: string; status: string }) => void;
 }) {
+  const opsiKelas = jenjang
+    ? daftarKelas.filter((k) => k.jenjang === jenjang)
+    : daftarKelas;
+
   return (
     <div className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-5 shadow-soft">
       <form
@@ -43,9 +51,11 @@ export default function FilterCard({
             className="rounded-lg border border-outline-variant bg-surface-bright px-3 py-2.5 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary"
           >
             <option value="">Semua Kelas</option>
-            <option>Alif</option>
-            <option>Ba</option>
-            <option>Ta</option>
+            {opsiKelas.map((k) => (
+              <option key={`${k.jenjang}-${k.kelas}`} value={k.kelas}>
+                {k.kelas}
+              </option>
+            ))}
           </select>
         </label>
         <label className="flex min-w-36 flex-1 flex-col gap-1.5">

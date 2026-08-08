@@ -6,12 +6,11 @@ import { UserPlus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { type SantriRow } from "@/lib/data";
 import { hapusSantri } from "@/actions/santri";
-import { KELAS_LABEL } from "@/lib/mock-santri";
-import FilterCard from "@/components/features/filter-card";
+import FilterCard, { type OpsiKelas } from "@/components/features/filter-card";
 import PaginationBar from "@/components/features/pagination-bar";
 import TableRowActions from "@/components/features/table-row-actions";
 import AvatarInitials from "@/components/ui/avatar";
-import ClassBadge from "@/components/ui/class-badge";
+import EditableClassBadge from "@/components/features/editable-class-badge";
 import StatusBadge from "@/components/ui/status-badge";
 import ModalSantri from "@/components/features/modal-santri";
 
@@ -20,9 +19,10 @@ interface Props {
   total: number;
   page: number;
   perPage: number;
+  daftarKelas: OpsiKelas[];
 }
 
-export default function SantriView({ initialData, total, page, perPage }: Props) {
+export default function SantriView({ initialData, total, page, perPage, daftarKelas }: Props) {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -90,6 +90,7 @@ export default function SantriView({ initialData, total, page, perPage }: Props)
             jenjang={jenjang}
             kelas={kelas}
             status={status}
+            daftarKelas={daftarKelas}
             onApply={(f) => setParam(f)}
           />
         </div>
@@ -131,7 +132,7 @@ export default function SantriView({ initialData, total, page, perPage }: Props)
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <ClassBadge kelas={KELAS_LABEL(s.jenjang, s.kelas)} />
+                    <EditableClassBadge jenjang={s.jenjang} kelas={s.kelas} />
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm text-on-surface">{s.wali}</p>

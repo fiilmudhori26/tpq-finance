@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { audit } from "@/lib/audit";
-import { santriSchema, type SantriInput } from "@/lib/validations";
+import { santriSchema, renameKelasSchema, type SantriInput, type RenameKelasInput } from "@/lib/validations";
 
 export type ActionState<T = unknown> = {
   success: boolean;
@@ -162,5 +162,43 @@ export async function hapusSantri(id: string): Promise<ActionState> {
   } catch (error) {
     console.error("Gagal hapus santri:", error);
     return { success: false, message: "Gagal menghapus data santri" };
+  }
+}
+
+export async function renameKelas(input: RenameKelasInput): Promise<ActionState<{ jumlah: number }>> {
+  const session = await requireRole("SUPER_ADMIN", "BENDAHARA");
+  const tenantId = session.user.tenantId;
+
+  const parsed = renameKelasSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, message: "Validasi gagal", errors: parsed.error.flatten().fieldErrors };
+  }
+
+  const { jenjang, kelasLama, kelasBaru } = parsed.data;
+  if (kelasLama === kelasBaru) return { success: true, message: "Nama kelas tidak berubah" };
+
+  try {
+    const { count } = await db.$transaction(async (tx) => {
+      const hasil = await tx.santri.updateMany({
+        where: { tenantId, jenjang, kelas: kelasLama },
+        data: { kelas: kelasBaru },
+      });
+      await audit(tx, {
+        tenantId,
+        userId: session.user.id,
+        aksi: "UPDATE",
+        entitas: "Santri",
+        entitasId: kelasLama,
+        detail: { aksi: "RENAME_KELAS", jenjang, kelasLama, kelasBaru, jumlah: hasil.count },
+      });
+      return hasil;
+    });
+
+    revalidatePath("/santri");
+    revalidatePath("/beranda");
+    return { success: true, message: `Kelas ${jenjang} - ${kelasLama} diubah menjadi ${kelasBaru}`, data: { jumlah: count } };
+  } catch (error) {
+    console.error("Gagal rename kelas:", error);
+    return { success: false, message: "Gagal mengubah nama kelas" };
   }
 }

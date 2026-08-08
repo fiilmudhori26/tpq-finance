@@ -1,6 +1,34 @@
 import { Suspense } from "react";
-import { getSantriList } from "@/lib/data";
+import { getSantriList, getDaftarKelas } from "@/lib/data";
 import SantriView from "@/components/features/santri-view";
+import PageSkeleton from "@/components/ui/page-skeleton";
+
+async function SantriTable({ sp }: { sp: Record<string, string | undefined> }) {
+  const page = Math.max(1, Number(sp.page ?? 1));
+  const perPage = 8;
+
+  const [list, daftarKelas] = await Promise.all([
+    getSantriList({
+      jenjang: sp.jenjang ?? "",
+      kelas: sp.kelas ?? "",
+      status: sp.status ?? "",
+      q: sp.q ?? "",
+      page,
+      perPage,
+    }),
+    getDaftarKelas(),
+  ]);
+
+  return (
+    <SantriView
+      initialData={list.data}
+      total={list.total}
+      page={page}
+      perPage={perPage}
+      daftarKelas={daftarKelas}
+    />
+  );
+}
 
 export default async function SantriPage({
   searchParams,
@@ -8,23 +36,10 @@ export default async function SantriPage({
   searchParams: Promise<Record<string, string | undefined>>;
 }) {
   const sp = await searchParams;
-  const jenjang = sp.jenjang ?? "";
-  const kelas = sp.kelas ?? "";
-  const status = sp.status ?? "";
-  const q = sp.q ?? "";
-  const page = Math.max(1, Number(sp.page ?? 1));
-  const perPage = 8;
-
-  const { data, total } = await getSantriList({ jenjang, kelas, status, q, page, perPage });
 
   return (
-    <Suspense>
-      <SantriView
-        initialData={data}
-        total={total}
-        page={page}
-        perPage={perPage}
-      />
+    <Suspense fallback={<PageSkeleton />}>
+      <SantriTable sp={sp} />
     </Suspense>
   );
 }

@@ -237,6 +237,18 @@ export const getSppRates = cache(async () => {
   return db.sppRate.findMany({ where: { tenantId, deletedAt: null }, orderBy: { jenjang: "asc" } });
 });
 
+/** Daftar kelas unik per jenjang (dari data santri) — sumber opsi filter & rename. */
+export const getDaftarKelas = cache(async () => {
+  const tenantId = await getTenantId();
+  const rows = await db.santri.findMany({
+    where: { tenantId, deletedAt: null },
+    distinct: ["jenjang", "kelas"],
+    select: { jenjang: true, kelas: true },
+    orderBy: [{ jenjang: "asc" }, { kelas: "asc" }],
+  });
+  return rows.map((r) => ({ jenjang: r.jenjang, kelas: r.kelas }));
+});
+
 export interface ProfilSantri {
   id: string;
   noInduk: string;
@@ -381,19 +393,51 @@ export const getDashboardData = cache(async () => {
   const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const endLastMonth = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+  const sejakTrend = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  const akhirBulanIni = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
 
+  // Semua query dashboard dijalankan paralel → 1 round-trip, bukan 4 berurutan.
   const [
     totalPemasukanThisMonth,
     totalPengeluaranThisMonth,
     totalPemasukanLastMonth,
     totalPengeluaranLastMonth,
     totalSantriAktif,
+    trendRaw,
+    santriTunggakan,
+    transaksi,
   ] = await Promise.all([
     db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PEMASUKAN", tanggal: { gte: startThisMonth }, deletedAt: null } }),
     db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PENGELUARAN", tanggal: { gte: startThisMonth }, deletedAt: null } }),
     db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PEMASUKAN", tanggal: { gte: startLastMonth, lte: endLastMonth }, deletedAt: null } }),
     db.transaksi.aggregate({ _sum: { jumlah: true }, where: { tenantId, jenis: "PENGELUARAN", tanggal: { gte: startLastMonth, lte: endLastMonth }, deletedAt: null } }),
     db.santri.count({ where: { tenantId, status: "AKTIF", deletedAt: null } }),
+    db.transaksi.groupBy({
+      by: ["jenis", "tanggal"],
+      _sum: { jumlah: true },
+      where: {
+        tenantId,
+        deletedAt: null,
+        tanggal: { gte: sejakTrend, lt: akhirBulanIni },
+      },
+    }),
+    db.santri.findMany({
+      where: {
+        tenantId,
+        status: "AKTIF",
+        deletedAt: null,
+        pembayarans: { none: { bulan: bulanIni, status: "LUNAS", deletedAt: null } },
+      },
+      include: { pembayarans: { where: { status: "LUNAS", deletedAt: null }, orderBy: { bulan: "asc" } } },
+      take: 5,
+    }),
+    db.transaksi.findMany({
+      where: { tenantId, deletedAt: null },
+      orderBy: { tanggal: "desc" },
+      take: 5,
+      include: { kategori: true },
+    }),
   ]);
 
   const pemasukanThis = Number(totalPemasukanThisMonth._sum.jumlah ?? 0);
@@ -422,16 +466,6 @@ export const getDashboardData = cache(async () => {
   // Trend 6 bulan — 1 query grouped, bukan 12 aggregate paralel
   const trend: TrendBulan[] = [];
   {
-    const sejak = new Date(now.getFullYear(), now.getMonth() - 5, 1);
-    const trendRaw = await db.transaksi.groupBy({
-      by: ["jenis", "tanggal"],
-      _sum: { jumlah: true },
-      where: {
-        tenantId,
-        deletedAt: null,
-        tanggal: { gte: sejak, lt: new Date(now.getFullYear(), now.getMonth() + 1, 1) },
-      },
-    });
     const pemasukanByBulan = new Map<number, number>();
     const pengeluaranByBulan = new Map<number, number>();
     for (const r of trendRaw) {
@@ -457,17 +491,6 @@ export const getDashboardData = cache(async () => {
   }
 
   // Tunggakan
-  const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
-  const santriTunggakan = await db.santri.findMany({
-    where: {
-      tenantId,
-      status: "AKTIF",
-      deletedAt: null,
-      pembayarans: { none: { bulan: bulanIni, status: "LUNAS", deletedAt: null } },
-    },
-    include: { pembayarans: { where: { status: "LUNAS", deletedAt: null }, orderBy: { bulan: "asc" } } },
-    take: 5,
-  });
   const tunggakan: TunggakanData[] = santriTunggakan.map((s) => {
     const durasi = Math.max(0, now.getFullYear() * 12 + now.getMonth() - (s.createdAt.getFullYear() * 12 + s.createdAt.getMonth()) + 1);
     const nominalBulanan = 75_000;
@@ -483,12 +506,6 @@ export const getDashboardData = cache(async () => {
   });
 
   // Transaksi terbaru
-  const transaksi = await db.transaksi.findMany({
-    where: { tenantId, deletedAt: null },
-    orderBy: { tanggal: "desc" },
-    take: 5,
-    include: { kategori: true },
-  });
   const transaksiTerbaru: TransaksiRow[] = transaksi.map((t) => ({
     id: t.id,
     jenis: t.jenis === "PEMASUKAN" ? "pemasukan" : "pengeluaran",

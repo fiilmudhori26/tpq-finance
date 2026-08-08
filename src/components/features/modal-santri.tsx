@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { X } from "lucide-react";
 import { toast } from "sonner";
-import { JENJANG, KELAS } from "@/lib/mock-santri";
+import { JENJANG } from "@/lib/mock-santri";
 import { tambahSantri, editSantri } from "@/actions/santri";
 import type { SantriRow } from "@/lib/data";
 
@@ -18,7 +18,7 @@ export default function ModalSantri({
 }) {
   const [nama, setNama] = useState("");
   const [jenjang, setJenjang] = useState<string>(JENJANG[0]);
-  const [kelas, setKelas] = useState<string>(KELAS[0]);
+  const [kelas, setKelas] = useState<string>("");
   const [wali, setWali] = useState("");
   const [noHp, setNoHp] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -27,7 +27,7 @@ export default function ModalSantri({
     if (open) {
       setNama(edit?.nama ?? "");
       setJenjang(edit?.jenjang ?? JENJANG[0]);
-      setKelas(edit?.kelas ?? KELAS[0]);
+      setKelas(edit?.kelas ?? "");
       setWali(edit?.wali ?? "");
       setNoHp(edit?.noHp ?? "");
     }
@@ -123,17 +123,15 @@ export default function ModalSantri({
               <label htmlFor="kelas" className="mb-1 block text-sm font-medium text-on-surface-variant">
                 Kelas
               </label>
-              <select
+              <input
                 id="kelas"
+                required
                 value={kelas}
                 onChange={(e) => setKelas(e.target.value)}
+                placeholder="Ketik nama kelas (mis. Alif, Ba, ...)"
                 disabled={isPending}
                 className="w-full rounded-lg border border-outline-variant bg-surface-bright px-4 py-3 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary disabled:opacity-50"
-              >
-                {KELAS.map((k) => (
-                  <option key={k}>{k}</option>
-                ))}
-              </select>
+              />
             </div>
           </div>
           <div>
