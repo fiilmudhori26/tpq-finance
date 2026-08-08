@@ -397,7 +397,7 @@ export const getDashboardData = cache(async () => {
   const akhirBulanIni = new Date(now.getFullYear(), now.getMonth() + 1, 1);
   const bulanIni = new Date(now.getFullYear(), now.getMonth(), 1);
 
-  // Semua query dashboard dijalankan paralel → 1 round-trip, bukan 4 berurutan.
+  // Semua query dashboard dijalankan paralel → 1 round-trip per query, bukan 4 berurutan.
   const [
     totalPemasukanThisMonth,
     totalPengeluaranThisMonth,

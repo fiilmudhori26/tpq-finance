@@ -13,7 +13,7 @@ function poolFromUrl() {
     password: decodeURIComponent(u.password),
     database: u.pathname.slice(1),
     ssl: { rejectUnauthorized: false },
-    max: 5,
+    max: 10, // ponytail: 5 dulu → request antri (latensi Neon ~80ms/query, 1 halaman 3-4 slot). Naikkan kalau traffic tumbuh.
   });
 }
 
